@@ -1,3 +1,9 @@
+"""
+All credit goes to: http://code.activestate.com/recipes/577081-humanized-representation-of-a-number-of-bytes/
+"""
+
+from __future__ import division
+
 def humanize_bytes(bytes, precision=1):
     """Return a humanized string representation of a number of bytes.
 
