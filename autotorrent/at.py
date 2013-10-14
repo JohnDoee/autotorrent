@@ -225,7 +225,8 @@ class AutoTorrent(object):
             mtime = int(os.stat(file).st_mtime)
             torrent['libtorrent_resume']['files'].append({'priority': 2, 'mtime': mtime})
 
-        resumable_torrentfile = 'rtorrent-%s' % torrentfile
+        resumable_torrentfile = os.path.split(torrentfile)
+        resumable_torrentfile = '%s%srtorrent-%s' % (resumable_torrentfile[0], os.sep, resumable_torrentfile[1])
         with open(resumable_torrentfile, 'wb') as f:
             f.write(bencode(torrent))
 
