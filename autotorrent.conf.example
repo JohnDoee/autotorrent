@@ -1,0 +1,10 @@
+[general]
+db=_autotorrent.db
+store_path=/home/rtorrent/myseeds/
+ignore_files=shittyfile
+rtorrent_url=http://user:pass@127.0.0.1/RPC2
+label=seeded
+
+[disks]
+disk1=/mnt/sd1/anime/
+disk2=/mnt/sd1/tv/
