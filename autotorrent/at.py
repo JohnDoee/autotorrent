@@ -96,21 +96,24 @@ class AutoTorrent(object):
                     path = os.path.join(root, file)
                     size = os.path.getsize(path)
                     key = '%s;%s' % (normalized_filename, size)
-                    if key in self.db:
+                    if size in self.db.get(key, {}):
                         logger.warning('Duplicate key %s and %s' % (path, self.db[key]))
-                    self.db[key] = path
+                    
+                    if key not in self.db:
+                        self.db[key] = {}
+                    
+                    self.db[key][size] = path
         self.db.sync()
 
     def find_file_path(self, file):
         """
         Looks for a file in the local database.
         """
-        size = file['length']
+        size = int(file['length'])
         normalized_filename = self.normalize_filename(file['path'][-1])
         path = os.sep.join(file['path'])
-        key = '%s;%s' % (normalized_filename, size)
 
-        result = self.db.get(key, None)
+        result = self.db.get(normalized_filename, {}).get(size)
         if result:
             return path, result
         else:
