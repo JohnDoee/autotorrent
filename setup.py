@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='autotorrent',
-    version='1.0.0',
+    version='1.1.0',
     description='AutoTorrent allows easy cross-seeding/', 
     author='Anders Jensen',
     maintainer='John Doee',
