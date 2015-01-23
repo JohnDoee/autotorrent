@@ -26,6 +26,10 @@ same folder as autotorrent is executed from.
 * ignore_files - A comma seperated list of files that should be ignored (does not support wildcard)
 * rtorrent_url - URL to rtorrent, must be to the XMLRPC server
 * label - Label added to torrents when added to rtorrent (used in rutorrent only)
+* add_limit_size - Max size, in bytes, the total torrent size is allowed to vary
+* add_limit_percent - Max percent the total torrent size is allowed to vary
+
+the add_limit_* variables allow for downloading of e.g. different NFOs and other small files that makes a difference in the torrents.
 
 ### disks
 
