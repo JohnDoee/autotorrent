@@ -2,14 +2,25 @@
 
 from setuptools import setup
 
+def read_description():
+    import os
+    path = os.path.join(os.path.dirname(__file__), 'README.rst')
+    try:
+        with open(path) as f:
+            return f.read()
+    except:
+        return 'No description found'
+
+print read_description()
+
 setup(
     name='autotorrent',
     version='1.1.0',
-    description='AutoTorrent allows easy cross-seeding/', 
+    description='AutoTorrent allows easy cross-seeding', 
     author='Anders Jensen',
     author_email='johndoee+autotorrent@tidalstream.org',
     maintainer='John Doee',
-    url='https://github.com/johndoee/',
+    url='https://github.com/JohnDoee/autotorrent',
     packages=['autotorrent'],
     install_requires=['BitTorrent-bencode'],
     license='BSD',
