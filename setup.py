@@ -11,12 +11,11 @@ def read_description():
     except:
         return 'No description found'
 
-print read_description()
-
 setup(
     name='autotorrent',
     version='1.1.0',
-    description='AutoTorrent allows easy cross-seeding', 
+    description='AutoTorrent allows easy cross-seeding',
+    long_description=read_description(),
     author='Anders Jensen',
     author_email='johndoee+autotorrent@tidalstream.org',
     maintainer='John Doee',

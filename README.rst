@@ -1,4 +1,4 @@
-autotorrent
+AutoTorrent
 ===========
 
 Given an input torrent, it will scan your collection for the files in
@@ -11,10 +11,17 @@ still be able to seed with the folder structure required by the torrent.
 Install
 -------
 
+From GitHub (develop):
 ::
 
     virtualenv autotorrent-env
     autotorrent-env/bin/pip install git+https://github.com/JohnDoee/autotorrent.git
+
+From PyPi (stable):
+::
+
+    virtualenv autotorrent-env
+    autotorrent-env/bin/pip install autotorrent
 
 Configuration
 -------------
