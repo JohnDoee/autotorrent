@@ -52,6 +52,8 @@ class AutoTorrent(object):
         self.ignore_files = config.get('general', 'ignore_files').split(',')
         self.store_path = config.get('general', 'store_path')
         self.proxy = ServerProxy(config.get('general', 'rtorrent_url'))
+        self.add_limit_size = int(config.get('general', 'add_limit_size'))
+        self.add_limit_percent = float(config.get('general', 'add_limit_percent'))
         self.disks = []
         self.torrents_seeded = set()
 
@@ -87,6 +89,7 @@ class AutoTorrent(object):
         logger.info('Rebuilding database')
         self.truncate_database()
         for disk in self.disks:
+            print 'Scanning', disk
             for root, dirs, files in os.walk(disk):
                 for file in files:
                     normalized_filename = self.normalize_filename(file)
@@ -95,14 +98,15 @@ class AutoTorrent(object):
 
                     path = os.path.join(root, file)
                     size = os.path.getsize(path)
-                    key = '%s;%s' % (normalized_filename, size)
-                    if size in self.db.get(key, {}):
+                    key = normalized_filename
+                    
+                    v = self.db.get(key, {})
+                    if size in v:
                         logger.warning('Duplicate key %s and %s' % (path, self.db[key]))
-                    
-                    if key not in self.db:
-                        self.db[key] = {}
-                    
-                    self.db[key][size] = path
+
+                    v[size] = path
+                    self.db[key] = v
+            print 'Done scanning', disk
         self.db.sync()
 
     def find_file_path(self, file):
@@ -175,9 +179,11 @@ class AutoTorrent(object):
             return Status.ALREADY_SEEDING
 
         found_size, missing_size, files = self.parse_torrent(torrent)
-        if missing_size:
-            logger.info('Files missing from %s, only %3.2f%% found' % (path, (100-(missing_size/(found_size+missing_size))*100)))
-            self.print_status(Status.MISSING_FILES, path, 'Missing files, only %3.2f%% found' % (100-(missing_size/(found_size+missing_size))*100))
+        missing_percent = (missing_size / (found_size + missing_size)) * 100
+        found_percent = 100 - missing_percent
+        if missing_size and missing_percent > self.add_limit_percent and missing_size > self.add_limit_size:
+            logger.info('Files missing from %s, only %3.2f%% found (%s missing)' % (path, found_percent, humanize_bytes(missing_size)))
+            self.print_status(Status.MISSING_FILES, path, 'Missing files, only %3.2f%% found (%s missing)' % (found_percent, humanize_bytes(missing_size)))
             return Status.MISSING_FILES
 
         destination_root_path = os.path.join(self.store_path, os.path.splitext(os.path.split(path)[1])[0])

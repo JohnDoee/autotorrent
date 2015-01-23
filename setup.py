@@ -5,8 +5,8 @@ from setuptools import setup
 setup(
     name='autotorrent',
     version='1.0.0',
-    description='AutoTorrent', 
-    author='John Doee',
+    description='AutoTorrent allows easy cross-seeding/', 
+    author='Anders Jensen',
     maintainer='John Doee',
     url='https://github.com/johndoee/',
     packages=['autotorrent'],
