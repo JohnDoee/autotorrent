@@ -209,7 +209,9 @@ class AutoTorrent(object):
             os.symlink(source, os.path.join(dpath, dfile))
             new_files.append(os.path.join(dpath, dfile))
 
-        self.add_to_torrentclient(torrentfile, torrent, destination_path, found_size, new_files)
+        resume_mode = not missing_size
+
+        self.add_to_torrentclient(torrentfile, torrent, destination_path, found_size, new_files, resume_mode)
 
     def check_torrentclient(self, torrent):
         """
@@ -220,19 +222,20 @@ class AutoTorrent(object):
             return True
         return False
 
-    def add_to_torrentclient(self, torrentfile, torrent, destination_path, size, files):
+    def add_to_torrentclient(self, torrentfile, torrent, destination_path, size, files, resume_mode):
         """
         Adds the torrent to the client with the given destination_path as source for files
         """
         logger.info('Adding torrent to Client with torrent file %s and source path %r' % (torrentfile, destination_path))
 
-        psize = torrent['info']['piece length']
-        torrent['libtorrent_resume'] = {}
-        torrent['libtorrent_resume']['bitfield'] = int((size+psize-1) / psize)
-        torrent['libtorrent_resume']['files'] = []
-        for file in files:
-            mtime = int(os.stat(file).st_mtime)
-            torrent['libtorrent_resume']['files'].append({'priority': 2, 'mtime': mtime})
+        if resume_mode:
+            psize = torrent['info']['piece length']
+            torrent['libtorrent_resume'] = {}
+            torrent['libtorrent_resume']['bitfield'] = int((size+psize-1) / psize)
+            torrent['libtorrent_resume']['files'] = []
+            for file in files:
+                mtime = int(os.stat(file).st_mtime)
+                torrent['libtorrent_resume']['files'].append({'priority': 1, 'mtime': mtime})
 
         resumable_torrentfile = os.path.split(torrentfile)
         resumable_torrentfile = '%s%srtorrent-%s' % (resumable_torrentfile[0], os.sep, resumable_torrentfile[1])
