@@ -13,6 +13,7 @@ from xmlrpclib import ServerProxy
 from bencode import bencode, bdecode
 
 from autotorrent.humanize import humanize_bytes
+from autotorrent.scgitransport import SCGITransport
 
 logger = logging.getLogger('autotorrent')
 
@@ -45,13 +46,21 @@ status_messages = {
   Status.FOLDER_EXIST_NOT_SEEDING: '%sExists%s' % (COLOR_FOLDER_EXIST_NOT_SEEDING, Color.ENDC),
 }
 
+def create_proxy(url):
+    proto = url.split(':')[0].lower()
+    if proto == 'scgi':
+        url = ':'.join(['http'] + url.split(':')[1:])
+        return ServerProxy(url, transport=SCGITransport())
+    else:
+        return ServerProxy(url)
+
 class AutoTorrent(object):
     def __init__(self, config):
         self.db_file = config.get('general', 'db')
         self.db = shelve.open(self.db_file)
         self.ignore_files = config.get('general', 'ignore_files').split(',')
         self.store_path = config.get('general', 'store_path')
-        self.proxy = ServerProxy(config.get('general', 'rtorrent_url'))
+        self.proxy = create_proxy(config.get('general', 'rtorrent_url'))
         self.add_limit_size = int(config.get('general', 'add_limit_size'))
         self.add_limit_percent = float(config.get('general', 'add_limit_percent'))
         self.disks = []

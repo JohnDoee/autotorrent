@@ -2,11 +2,11 @@ AutoTorrent
 ===========
 
 Given an input torrent, it will scan your collection for the files in
-the torrent. If all the files are found, a folder with links to all the
-files will be created.
+the torrent. If all (or most) the files are found, a folder with links to all the
+files will be created and the torrent added to rTorrent.
 
-The idea is to be able to organise your collection as you want to and
-still be able to seed with the folder structure required by the torrent.
+All you need to do is download the torrents and AutoTorrent plays mix and match
+to make it possible to seed as much as possible across trackers.
 
 Install
 -------
@@ -36,7 +36,7 @@ general
 -  store\_path - Folder where the virtual folders seeded, resides
 -  ignore\_files - A comma seperated list of files that should be
    ignored (does not support wildcard)
--  rtorrent\_url - URL to rtorrent, must be to the XMLRPC server
+-  rtorrent\_url - URL to rtorrent, must be to the XMLRPC server or SCGI server.
 -  label - Label added to torrents when added to rtorrent (used in
    rutorrent only)
 -  add\_limit\_size - Max size, in bytes, the total torrent size is
@@ -46,6 +46,9 @@ general
 
 the add\_limit\_\* variables allow for downloading of e.g. different
 NFOs and other small files that makes a difference in the torrents.
+
+the rtorrent_url supports both SCGI directly and XMLRPC via HTTP.
+To use scgi, prefix the url with scgi instead of http, e.g. scgi://127.0.0.1:10000/
 
 disks
 ~~~~~
