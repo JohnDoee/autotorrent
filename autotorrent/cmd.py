@@ -1,4 +1,5 @@
 import ConfigParser
+
 from optparse import OptionParser
 
 from autotorrent.at import AutoTorrent
@@ -7,14 +8,19 @@ def commandline_handler():
     config = ConfigParser.ConfigParser()
     config.read('autotorrent.conf')
 
-    at = AutoTorrent(config)
-    at.populate_torrents_seeded()
-
     parser = OptionParser()
     parser.add_option("-r", "--rebuild", action="store_true", dest="rebuild", default=False, help='Rebuild the database')
     parser.add_option("-a", "--addfile", action="store_true", dest="addfile", default=False, help='Add a new torrent file to client')
     parser.add_option("-v", "--verify", action="store_true", dest="verify", default=False, help='Verify currently added torrents')
+    
     (options, args) = parser.parse_args()
+    
+    if not config.has_section('general'):
+        print 'AutoTorrent is not properly configured, try running it with the --configure option'
+        quit(1)
+
+    at = AutoTorrent(config)
+    at.populate_torrents_seeded()
 
     if options.rebuild:
         at.rebuild_database()
