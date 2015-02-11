@@ -55,9 +55,6 @@ class SCGITransport(Transport):
                 break
             response += r
 
-        print '%r' % request
-        print request
-        print response
         response_body = BytesIO('\r\n\r\n'.join(response.split('\r\n\r\n')[1:]))
 
         return self.parse_response(response_body)
