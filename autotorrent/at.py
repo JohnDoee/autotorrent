@@ -124,7 +124,7 @@ class AutoTorrent(object):
         """
         size = int(file['length'])
         normalized_filename = self.normalize_filename(file['path'][-1])
-        path = os.sep.join(file['path'])
+        path = os.path.join(file['path'])
 
         result = self.db.get(normalized_filename, {}).get(size)
         if result:
