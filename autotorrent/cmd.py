@@ -59,6 +59,7 @@ def commandline_handler():
         at.rebuild_database()
 
     if args.addfile:
+        print 'Found %s torrent(s)' % len(args.addfile)
         for torrent in args.addfile:
             at.handle_torrentfile(torrent)
 

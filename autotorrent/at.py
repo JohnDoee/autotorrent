@@ -252,6 +252,7 @@ class AutoTorrent(object):
         logger.info('Adding torrent to Client with torrent file %r and source path %r' % (torrentfile, destination_path))
 
         if resume_mode:
+            logger.info('Adding resume data to torrent')
             psize = torrent['info']['piece length']
             torrent['libtorrent_resume'] = {}
             torrent['libtorrent_resume']['bitfield'] = int((size+psize-1) / psize)
