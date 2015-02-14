@@ -6,6 +6,7 @@ rtorrent_url=http://user:pass@127.0.0.1/RPC2
 label=seeded
 add_limit_size=64000
 add_limit_percent=1
+link_type=soft
 
 [disks]
 disk1=/mnt/sd1/anime/
