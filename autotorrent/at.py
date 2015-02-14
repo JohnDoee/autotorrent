@@ -73,11 +73,11 @@ class AutoTorrent(object):
 
     def test_proxy(self):
         """
-        Tests the XMLRPC proxy
+        Tests the XMLRPC proxy, returns cwd and pid if found.
         """
         methods = self.proxy.system.listMethods()
         assert 'view.list' in methods
-        return True
+        return self.proxy.system.cwd(), self.proxy.system.pid()
     
     def populate_torrents_seeded(self):
         """

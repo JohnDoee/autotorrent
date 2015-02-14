@@ -48,8 +48,10 @@ def commandline_handler():
     )
     
     if args.test_rtorrent:
-        if at.test_proxy():
+        proxy_test_result = at.test_proxy()
+        if proxy_test_result:
             print 'Connected to rTorrent successfully!'
+            print '  cwd:%r, pid:%r' % proxy_test_result
     
     at.populate_torrents_seeded()
 
