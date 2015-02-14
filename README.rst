@@ -43,6 +43,8 @@ general
    allowed to vary
 -  add\_limit\_percent - Max percent the total torrent size is allowed
    to vary
+-  link\_type - What kind of link should AutoTorrent make? the options are
+   hard and soft.
 
 the add\_limit\_\* variables allow for downloading of e.g. different
 NFOs and other small files that makes a difference in the torrents.

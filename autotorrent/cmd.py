@@ -1,35 +1,66 @@
+import argparse
 import ConfigParser
-
-from optparse import OptionParser
+import logging
+import os
 
 from autotorrent.at import AutoTorrent
 
 def commandline_handler():
-    config = ConfigParser.ConfigParser()
-    config.read('autotorrent.conf')
-
-    parser = OptionParser()
-    parser.add_option("-r", "--rebuild", action="store_true", dest="rebuild", default=False, help='Rebuild the database')
-    parser.add_option("-a", "--addfile", action="store_true", dest="addfile", default=False, help='Add a new torrent file to client')
-    parser.add_option("-v", "--verify", action="store_true", dest="verify", default=False, help='Verify currently added torrents')
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-c", "--config", dest="config_file", default="autotorrent.conf", help="Path to config file")
     
-    (options, args) = parser.parse_args()
+    parser.add_argument("-t", "--test_rtorrent", action="store_true", dest="test_rtorrent", default=False, help='Tests the connection to rTorrent')
+    parser.add_argument("-r", "--rebuild", action="store_true", dest="rebuild", default=False, help='Rebuild the database')
+    parser.add_argument("-a", "--addfile", dest="addfile", default=False, help='Add a new torrent file to client', nargs='+')
+    parser.add_argument("-v", "--verify", action="store_true", dest="verify", default=False, help='Verify currently added torrents')
+    parser.add_argument("--verbose", help="increase output verbosity", action="store_true", dest="verbose")
+    
+    args = parser.parse_args()
+    
+    logging.basicConfig(level=logging.DEBUG if args.verbose else logging.ERROR)
+    
+    if not os.path.isfile(args.config_file):
+        parser.error("Config file not found %r" % args.config_file)
+    
+    config = ConfigParser.ConfigParser()
+    config.read(args.config_file)
     
     if not config.has_section('general'):
-        print 'AutoTorrent is not properly configured, try running it with the --configure option'
+        parser.error('AutoTorrent is not properly configured, please edit %r' % args.config_file)
         quit(1)
 
-    at = AutoTorrent(config)
+    i = 1
+    disks = []
+    while config.has_option('disks', 'disk%s' % i):
+        disks.append(config.get('disks', 'disk%s' % i))
+        i += 1
+
+    at = AutoTorrent(
+        config.get('general', 'db'),
+        config.get('general', 'ignore_files').split(','),
+        config.get('general', 'store_path'),
+        config.get('general', 'rtorrent_url'),
+        config.getint('general', 'add_limit_size'),
+        config.getfloat('general', 'add_limit_percent'),
+        disks,
+        (config.get('general', 'label') if config.has_option('general', 'label') else None),
+        (config.get('general', 'link_type') if config.has_option('general', 'link_type') else 'soft'),
+    )
+    
+    if args.test_rtorrent:
+        if at.test_proxy():
+            print 'Connected to rTorrent successfully!'
+    
     at.populate_torrents_seeded()
 
-    if options.rebuild:
+    if args.rebuild:
         at.rebuild_database()
 
-    if options.addfile:
-        for arg in args:
-            at.handle_torrentfile(arg)
+    if args.addfile:
+        for torrent in args.addfile:
+            at.handle_torrentfile(torrent)
 
-    if options.verify:
+    if args.verify:
         at.verify_all()
 
 if __name__ == '__main__':

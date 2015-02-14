@@ -46,6 +46,9 @@ status_messages = {
   Status.FOLDER_EXIST_NOT_SEEDING: '%sExists%s' % (COLOR_FOLDER_EXIST_NOT_SEEDING, Color.ENDC),
 }
 
+class UnknownLinkTypeException(Exception):
+    pass
+
 def create_proxy(url):
     proto = url.split(':')[0].lower()
     if proto == 'scgi':
@@ -55,26 +58,26 @@ def create_proxy(url):
         return ServerProxy(url)
 
 class AutoTorrent(object):
-    def __init__(self, config):
-        self.db_file = config.get('general', 'db')
-        self.db = shelve.open(self.db_file)
-        self.ignore_files = config.get('general', 'ignore_files').split(',')
-        self.store_path = config.get('general', 'store_path')
-        self.proxy = create_proxy(config.get('general', 'rtorrent_url'))
-        self.add_limit_size = int(config.get('general', 'add_limit_size'))
-        self.add_limit_percent = float(config.get('general', 'add_limit_percent'))
-        self.disks = []
+    def __init__(self, db_file, ignore_files, store_path, rtorrent_url, add_limit_size, add_limit_percent, disks, label=None, link_type='soft'):
+        self.db_file = db_file
+        self.db = shelve.open(db_file)
+        self.ignore_files = ignore_files
+        self.store_path = store_path
+        self.proxy = create_proxy(rtorrent_url)
+        self.add_limit_size = add_limit_size
+        self.add_limit_percent = add_limit_percent
+        self.label = label
+        self.disks = disks
+        self.link_type = link_type
         self.torrents_seeded = set()
 
-        i = 1
-        while config.has_option('disks', 'disk%s' % i):
-            self.disks.append(config.get('disks', 'disk%s' % i))
-            i += 1
-
-        self.label = None
-        if config.has_option('general', 'label') and config.get('general', 'label'):
-            self.label = config.get('general', 'label')
-
+    def test_proxy(self):
+        """
+        Tests the XMLRPC proxy
+        """
+        _ = self.proxy.system.listMethods()
+        return True
+    
     def populate_torrents_seeded(self):
         """
         Fetches a list of currently-seeded info hashes
@@ -98,24 +101,27 @@ class AutoTorrent(object):
         logger.info('Rebuilding database')
         self.truncate_database()
         for disk in self.disks:
-            print 'Scanning', disk
+            logger.info('Scanning %s' % disk)
             for root, dirs, files in os.walk(disk):
                 for file in files:
                     normalized_filename = self.normalize_filename(file)
                     if normalized_filename in self.ignore_files:
                         continue
 
-                    path = os.path.join(root, file)
+                    path = os.path.abspath(os.path.join(root, file))
                     size = os.path.getsize(path)
                     key = normalized_filename
                     
                     v = self.db.get(key, {})
-                    if size in v:
-                        logger.warning('Duplicate key %s and %s' % (path, self.db[key]))
+                    if size in v: # check if same file
+                        old_inode = os.stat(self.db[key][size]).st_ino
+                        new_inode = os.stat(path).st_ino
+                        if old_inode != new_inode:
+                            logger.warning('Duplicate key %s and %s' % (path, self.db[key]))
 
                     v[size] = path
                     self.db[key] = v
-            print 'Done scanning', disk
+            logger.info('Done scanning %s' % disk)
         self.db.sync()
 
     def find_file_path(self, file):
@@ -215,7 +221,14 @@ class AutoTorrent(object):
             if not os.path.isdir(dpath):
                 os.makedirs(dpath)
 
-            os.symlink(source, os.path.join(dpath, dfile))
+            if self.link_type == 'soft':
+                dest = os.path.join(dpath, dfile)
+                logger.debug('Making link from %r to %r' % (source, dest))
+                os.symlink(source, dest)
+            elif self.link_type == 'hard':
+                os.link(source, os.path.join(dpath, dfile))
+            else:
+                raise UnknownLinkTypeException('%r is not a known link type' % self.link_type)
             new_files.append(os.path.join(dpath, dfile))
 
         resume_mode = not missing_size
@@ -235,7 +248,7 @@ class AutoTorrent(object):
         """
         Adds the torrent to the client with the given destination_path as source for files
         """
-        logger.info('Adding torrent to Client with torrent file %s and source path %r' % (torrentfile, destination_path))
+        logger.info('Adding torrent to Client with torrent file %r and source path %r' % (torrentfile, destination_path))
 
         if resume_mode:
             psize = torrent['info']['piece length']
