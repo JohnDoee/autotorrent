@@ -15,7 +15,7 @@ From GitHub (develop):
 ::
 
     virtualenv autotorrent-env
-    autotorrent-env/bin/pip install git+https://github.com/JohnDoee/autotorrent.git
+    autotorrent-env/bin/pip install git+https://github.com/JohnDoee/autotorrent.git#develop
 
 From PyPi (stable):
 ::
