@@ -13,7 +13,7 @@ def read_description():
 
 setup(
     name='autotorrent',
-    version='1.2.2',
+    version='1.2.3',
     description='AutoTorrent allows easy cross-seeding',
     long_description=read_description(),
     author='Anders Jensen',
