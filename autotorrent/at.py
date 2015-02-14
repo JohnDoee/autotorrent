@@ -75,7 +75,8 @@ class AutoTorrent(object):
         """
         Tests the XMLRPC proxy
         """
-        _ = self.proxy.system.listMethods()
+        methods = self.proxy.system.listMethods()
+        assert 'view.list' in methods
         return True
     
     def populate_torrents_seeded(self):
