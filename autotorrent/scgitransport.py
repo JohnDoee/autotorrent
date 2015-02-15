@@ -47,6 +47,7 @@ class SCGITransport(Transport):
         request += request_body
 
         s.send(request)
+        print host, handler, request_body
 
         response = ''
         while True:
@@ -58,3 +59,6 @@ class SCGITransport(Transport):
         response_body = BytesIO('\r\n\r\n'.join(response.split('\r\n\r\n')[1:]))
 
         return self.parse_response(response_body)
+
+if not hasattr(Transport, 'single_request'):
+    SCGITransport.request = SCGITransport.single_request
