@@ -23,6 +23,8 @@ def commandline_handler():
     if not os.path.isfile(args.config_file):
         parser.error("Config file not found %r" % args.config_file)
     
+    os.chdir(os.path.dirname(os.path.abspath(args.config_file))) # Changing directory to where the config file is.
+    
     config = ConfigParser.ConfigParser()
     config.read(args.config_file)
     
