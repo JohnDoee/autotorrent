@@ -195,6 +195,7 @@ class AutoTorrent(object):
             self.print_status(Status.ALREADY_SEEDING, path, 'Already seeded')
             if self.delete_torrents:
                 logger.info('Removing torrent %r' % path)
+                os.remove(path)
             return Status.ALREADY_SEEDING
 
         found_size, missing_size, files = self.parse_torrent(torrent)
@@ -238,6 +239,7 @@ class AutoTorrent(object):
 
         if self.delete_torrents:
             logger.info('Removing torrent %r' % path)
+            os.remove(path)
 
         resume_mode = not missing_size
 
