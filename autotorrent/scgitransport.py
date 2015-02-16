@@ -47,7 +47,6 @@ class SCGITransport(Transport):
         request += request_body
 
         s.send(request)
-        print host, handler, request_body
 
         response = ''
         while True:
