@@ -12,6 +12,7 @@ def commandline_handler():
     parser.add_argument("-t", "--test_rtorrent", action="store_true", dest="test_rtorrent", default=False, help='Tests the connection to rTorrent')
     parser.add_argument("-r", "--rebuild", action="store_true", dest="rebuild", default=False, help='Rebuild the database')
     parser.add_argument("-a", "--addfile", dest="addfile", default=False, help='Add a new torrent file to client', nargs='+')
+    parser.add_argument("-d", "--delete_torrents", action="store_true", dest="delete_torrents", default=False, help='Delete torrents when they are added to the client')
     parser.add_argument("-v", "--verify", action="store_true", dest="verify", default=False, help='Verify currently added torrents')
     parser.add_argument("--verbose", help="increase output verbosity", action="store_true", dest="verbose")
     
@@ -43,6 +44,7 @@ def commandline_handler():
         config.getint('general', 'add_limit_size'),
         config.getfloat('general', 'add_limit_percent'),
         disks,
+        args.delete_torrents,
         (config.get('general', 'label') if config.has_option('general', 'label') else None),
         (config.get('general', 'link_type') if config.has_option('general', 'link_type') else 'soft'),
     )

@@ -58,7 +58,7 @@ def create_proxy(url):
         return ServerProxy(url)
 
 class AutoTorrent(object):
-    def __init__(self, db_file, ignore_files, store_path, rtorrent_url, add_limit_size, add_limit_percent, disks, label=None, link_type='soft'):
+    def __init__(self, db_file, ignore_files, store_path, rtorrent_url, add_limit_size, add_limit_percent, disks, delete_torrents, label=None, link_type='soft'):
         self.db_file = db_file
         self.db = shelve.open(db_file)
         self.ignore_files = ignore_files
@@ -66,6 +66,7 @@ class AutoTorrent(object):
         self.proxy = create_proxy(rtorrent_url)
         self.add_limit_size = add_limit_size
         self.add_limit_percent = add_limit_percent
+        self.delete_torrents = delete_torrents
         self.label = label
         self.disks = disks
         self.link_type = link_type
@@ -192,6 +193,8 @@ class AutoTorrent(object):
 
         if self.check_torrentclient(torrent):
             self.print_status(Status.ALREADY_SEEDING, path, 'Already seeded')
+            if self.delete_torrents:
+                logger.info('Removing torrent %r' % path)
             return Status.ALREADY_SEEDING
 
         found_size, missing_size, files = self.parse_torrent(torrent)
@@ -222,15 +225,19 @@ class AutoTorrent(object):
             if not os.path.isdir(dpath):
                 os.makedirs(dpath)
 
+            dest = os.path.join(dpath, dfile)
+            logger.debug('Making %s link from %r to %r' % (self.link_type, source, dest))
+            
             if self.link_type == 'soft':
-                dest = os.path.join(dpath, dfile)
-                logger.debug('Making link from %r to %r' % (source, dest))
                 os.symlink(source, dest)
             elif self.link_type == 'hard':
-                os.link(source, os.path.join(dpath, dfile))
+                os.link(source, dest)
             else:
                 raise UnknownLinkTypeException('%r is not a known link type' % self.link_type)
             new_files.append(os.path.join(dpath, dfile))
+
+        if self.delete_torrents:
+            logger.info('Removing torrent %r' % path)
 
         resume_mode = not missing_size
 
@@ -277,7 +284,8 @@ class AutoTorrent(object):
         """
         Opens and parses a torrent file
         """
-        return bdecode(open(path, 'rb').read())
+        with open(path, 'rb') as f:
+            return bdecode(f.read())
 
     def verify(self, path):
         """
