@@ -23,6 +23,20 @@ setup(
     packages=['autotorrent'],
     install_requires=['six'],
     license='BSD',
+    classifiers=[
+        'Development Status :: 4 - Beta',
+        'Environment :: Console',
+        'Intended Audience :: End Users/Desktop',
+        'License :: OSI Approved :: BSD License',
+        'Operating System :: POSIX :: BSD',
+        'Operating System :: POSIX :: Linux',
+        'Operating System :: POSIX :: Other',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
+        'Topic :: Communications :: File Sharing'
+    ],
     entry_points={ 'console_scripts': [
         'autotorrent = autotorrent.cmd:commandline_handler',
     ]},
