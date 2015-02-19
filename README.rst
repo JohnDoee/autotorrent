@@ -13,7 +13,7 @@ Requirements
 
 - Linux, BSD, OSX - Something not windows
 - rTorrent
-- Python 2.6 or 2.7
+- Python 2.6, 2.7, 3.3, 3.4
 - Shell / SSH / Putty
 
 Install
@@ -43,10 +43,7 @@ general
 -  db - Path to the database file
 -  store\_path - Folder where the virtual folders seeded, resides
 -  ignore\_files - A comma seperated list of files that should be
-   ignored (does not support wildcard)
--  rtorrent\_url - URL to rtorrent, must be to the XMLRPC server or SCGI server.
--  label - Label added to torrents when added to rtorrent (used in
-   rutorrent only)
+   ignored (supports wildcards)
 -  add\_limit\_size - Max size, in bytes, the total torrent size is
    allowed to vary
 -  add\_limit\_percent - Max percent the total torrent size is allowed
@@ -57,7 +54,15 @@ general
 the add\_limit\_\* variables allow for downloading of e.g. different
 NFOs and other small files that makes a difference in the torrents.
 
-the rtorrent_url supports both SCGI directly and XMLRPC via HTTP.
+client
+~~~~~~
+
+-  client - only rtorrent supported right no, so must be rtorrent
+-  url - URL to rtorrent, must be to the XMLRPC server or SCGI server.
+-  label - Label added to torrents when added to rtorrent (used in
+   rutorrent only)
+
+the url supports both SCGI directly and XMLRPC via HTTP.
 To use scgi, prefix the url with scgi instead of http, e.g. scgi://127.0.0.1:10000/
 
 disks
@@ -79,14 +84,14 @@ Step 2, have some torrents ready and run
 ``autotorrent -a folder/with/torrents/*.torrents``, this command will
 spit out how it went with adding the torrents.
 
-And you're good to go, it is possible to verify the integrity of the
-currently seeded torrents with ``autotorrent -v``
+And you're good to go.
 
 Limitations
 -----------
 
 -  Only works with rtorrent
 -  Probably only works on Linux
+-  Doesn't work with RARed scene releases
 
 FAQ
 ---
@@ -120,6 +125,12 @@ disks paths can be:
 **Q: Can I use the same Database file for several configuration files?**
 
 Yes, if they have the same disks. Don't worry about adding the store_path to the disks, AutoTorrent will figure it out.
+
+**Q: What problems can occur?**
+
+One big problem is that the files are not checked for their actual content, just if their filename matches and size matches.
+If AutoTorrent tries to use a file that is not complete, then you can end up sending loads of garbage to innocent peers,
+alhough they should blackball you quite fast.
 
 **Q: I want to cross-seed RARed scene releases, what do you think about that?**
 

@@ -1,0 +1,12 @@
+language: python
+python:
+  - "3.4"
+  - "3.3"
+  - "2.7"
+  - "2.6"
+install:
+  - pip install six coveralls
+script:
+  - nosetests --with-coverage --cover-package=autotorrent
+after_success:
+  - coveralls
