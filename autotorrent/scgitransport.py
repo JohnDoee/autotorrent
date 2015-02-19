@@ -19,42 +19,45 @@ License:
 """
 
 import socket
-import urllib
 
 from io import BytesIO
-from xmlrpclib import Transport
+
+from six.moves.xmlrpc_client import Transport
 
 def encode_netstring(input):
-    return str(len(input)) + ':' + input + ','
+    return str(len(input)).encode() + b':' + input + b','
 
 def encode_header(key, value):
-    return key + '\x00' + value + '\x00'
+    return key + b'\x00' + value + b'\x00'
 
 class SCGITransport(Transport):
     def single_request(self, host, handler, request_body, verbose=False):
         self.verbose = verbose
-        host, port = urllib.splitport(host)
+        host, port = host.split(':')
 
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((host, int(port)))
 
-        request = encode_header('CONTENT_LENGTH', str(len(request_body)))
-        request += encode_header('SCGI', '1')
-        request += encode_header('REQUEST_METHOD', 'POST')
-        request += encode_header('REQUEST_URI', handler)
+        request = encode_header(b'CONTENT_LENGTH', str(len(request_body)).encode())
+        request += encode_header(b'SCGI', b'1')
+        request += encode_header(b'REQUEST_METHOD', b'POST')
+        request += encode_header(b'REQUEST_URI', handler.encode())
 
         request = encode_netstring(request)
         request += request_body
 
         s.send(request)
 
-        response = ''
+        response = b''
         while True:
             r = s.recv(1024)
             if not r:
                 break
             response += r
 
-        response_body = BytesIO('\r\n\r\n'.join(response.split('\r\n\r\n')[1:]))
+        response_body = BytesIO(b'\r\n\r\n'.join(response.split(b'\r\n\r\n')[1:]))
 
         return self.parse_response(response_body)
+
+if not hasattr(Transport, 'single_request'):
+    SCGITransport.request = SCGITransport.single_request

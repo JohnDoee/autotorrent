@@ -23,4 +23,5 @@ dropin.cache
 _trial_temp
 *.komodoproject
 docs/_build*
-.env
+.env*
+autotorrent.conf

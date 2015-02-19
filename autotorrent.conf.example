@@ -1,12 +1,16 @@
 [general]
 db=_autotorrent.db
-store_path=/home/rtorrent/myseeds/
 ignore_files=shittyfile
-rtorrent_url=http://user:pass@127.0.0.1/RPC2
-label=seeded
+store_path=/home/rtorrent/myseeds/
 add_limit_size=64000
 add_limit_percent=1
+link_type=soft
 
 [disks]
 disk1=/mnt/sd1/anime/
 disk2=/mnt/sd1/tv/
+
+[client]
+client=rtorrent
+url=http://user:pass@127.0.0.1/RPC2
+label=seeded
