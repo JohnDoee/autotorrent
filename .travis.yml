@@ -8,3 +8,5 @@ install:
   - pip install six coveralls
 script:
   - nosetests --with-coverage --cover-package=autotorrent
+after_success:
+  - coveralls
