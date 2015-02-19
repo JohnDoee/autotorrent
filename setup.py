@@ -21,7 +21,7 @@ setup(
     maintainer='John Doee',
     url='https://github.com/JohnDoee/autotorrent',
     packages=['autotorrent'],
-    install_requires=['BitTorrent-bencode'],
+    install_requires=['six'],
     license='BSD',
     entry_points={ 'console_scripts': [
         'autotorrent = autotorrent.cmd:commandline_handler',
