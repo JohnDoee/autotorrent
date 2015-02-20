@@ -20,7 +20,7 @@ setup(
     author_email='johndoee+autotorrent@tidalstream.org',
     maintainer='John Doee',
     url='https://github.com/JohnDoee/autotorrent',
-    packages=['autotorrent'],
+    packages=['autotorrent', 'autotorrent.clients'],
     install_requires=['six'],
     license='MIT',
     classifiers=[
