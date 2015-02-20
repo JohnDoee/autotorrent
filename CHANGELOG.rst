@@ -1,4 +1,11 @@
-Version 1.3.0 (in development)
+Version 1.3.1 (20-02-2015)
+===========================================================
+
+*   Bugfix: Wrong license in setup.py.
+*   Bugfix: Forgot to populate already seeded torrents.
+*   Bugfix: Added logging to db scanning and fixed a small bug.
+
+Version 1.3.0 (19-02-2015)
 ===========================================================
 
 *   Feature: Added support for deleting torrent when added
