@@ -77,6 +77,7 @@ def commandline_handler():
 
     if args.addfile:
         print('Found %s torrent(s)' % len(args.addfile))
+        at.populate_torrents_seeded()
         for torrent in args.addfile:
             at.handle_torrentfile(os.path.join(current_path, torrent))
 
