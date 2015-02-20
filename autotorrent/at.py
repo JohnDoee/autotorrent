@@ -159,7 +159,7 @@ class AutoTorrent(object):
         missing_percent = (missing_size / (found_size + missing_size)) * 100
         found_percent = 100 - missing_percent
         
-        if missing_size and missing_percent > self.add_limit_percent and missing_size > self.add_limit_size:
+        if missing_size and missing_percent > self.add_limit_percent or missing_size > self.add_limit_size:
             logger.info('Files missing from %s, only %3.2f%% found (%s missing)' % (path, found_percent, humanize_bytes(missing_size)))
             self.print_status(Status.MISSING_FILES, path, 'Missing files, only %3.2f%% found (%s missing)' % (found_percent, humanize_bytes(missing_size)))
             return Status.MISSING_FILES

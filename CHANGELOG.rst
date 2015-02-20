@@ -1,3 +1,9 @@
+Version Development ()
+===========================================================
+
+*   Change: Changed how the add_limits work, if either of them are
+    violated, the torrent is skipped.
+
 Version 1.3.1 (20-02-2015)
 ===========================================================
 
