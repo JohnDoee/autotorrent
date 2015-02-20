@@ -31,9 +31,9 @@ class Database(object):
         logger.info('Rebuilding database')
         self.truncate()
         
-        for path in self.paths:
-            logger.info('Scanning %s' % path)
-            for root, dirs, files in os.walk(path):
+        for root_path in self.paths:
+            logger.info('Scanning %s' % root_path)
+            for root, dirs, files in os.walk(root_path):
                 for f in files:
                     normalized_filename = self.normalize_filename(f)
                     
@@ -56,7 +56,7 @@ class Database(object):
                             logger.warning('Duplicate key %s and %s' % (path, self.db[key]))
 
                     self.db[key] = path
-            logger.info('Done scanning %s' % path)
+            logger.info('Done scanning %s' % root_path)
         self.db.sync()
     
     def find_file_path(self, f, size):

@@ -71,7 +71,9 @@ def commandline_handler():
     at.populate_torrents_seeded()
 
     if args.rebuild:
+        print('Rebuilding database')
         db.rebuild()
+        print('Database rebuilt')
 
     if args.addfile:
         print('Found %s torrent(s)' % len(args.addfile))
