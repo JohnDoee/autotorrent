@@ -91,7 +91,6 @@ Limitations
 
 -  Only works with rtorrent
 -  Probably only works on Linux
--  Doesn't work with RARed scene releases
 
 FAQ
 ---
@@ -134,7 +133,13 @@ alhough they should blackball you quite fast.
 
 **Q: I want to cross-seed RARed scene releases, what do you think about that?**
 
-The current version of AutoTorrent does not support scene releases as a large part of the discovery process is looking at the file size.
+The actual .rar files must be completely downloaded and the same size. Things that can vary are: nfos, sfvs, samples and subs.
+
+The releases must also have an sfv in the same folder as the rar files files.
+
+**Q: What are hardlinks and what are the risks or problems associated with using them?**
+
+See: http://www.cyberciti.biz/tips/understanding-unixlinux-symbolic-soft-and-hard-links.html
 
 License
 -------

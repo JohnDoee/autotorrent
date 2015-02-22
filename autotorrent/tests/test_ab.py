@@ -12,6 +12,8 @@ from ..at import AutoTorrent, Status
 from ..bencode import bdecode, bencode
 from ..db import Database
 
+from pprint import pprint
+
 def create_file(temp_folder, path, size):
     path = os.path.join(temp_folder, *path)
     dirname = os.path.dirname(path)
@@ -24,6 +26,7 @@ def create_file(temp_folder, path, size):
 class DummyDatabase(Database):
     def __init__(self):
         self.db = {}
+        self.scene_mode = True
     
     def truncate(self):
         pass
@@ -33,7 +36,7 @@ class DummyDatabase(Database):
     
     def add_file(self, f, size):
         basename = os.path.basename(f)
-        key = self.keyify(self.normalize_filename(basename), size)
+        key = self.keyify(size, self.normalize_filename(basename))
         self.db[key] = f
 
 class DummyAutoTorrent(AutoTorrent):
@@ -60,33 +63,6 @@ class DummyClient(object):
 class TestAutoTorrent(TestCase):
     def setUp(self):
         self._temp_path = tempfile.mkdtemp()
-        self._fs = [
-            (['1', 'a'], 10),
-            (['1', 'b'], 20),
-            (['1', 'f', 'a'], 12),
-            (['1', 'f', 'c'], 15),
-            
-            (['2', 'd'], 12),
-            (['2', 'e'], 15),
-        ]
-        
-        for p, size in self._fs:
-            create_file(self._temp_path, p, size)
-        
-        self.db = Database(os.path.join(self._temp_path, 'autotorrent.db'), [os.path.join(self._temp_path, '1'),
-                                                                             os.path.join(self._temp_path, '2')], [])
-        self.db.rebuild()
-        
-        self.db = Database()
-        self.at = DummyAutoTorrent()
-    
-    def tearDown(self):
-        if self._temp_path.startswith('/tmp'): # paranoid-mon, the best pokemon.
-            shutil.rmtree(self._temp_path)
-    
-class TestAutoTorrentUnits(TestCase):
-    def setUp(self):
-        self._temp_path = tempfile.mkdtemp()
         
         self.src = os.path.join(self._temp_path, 'src')
         os.makedirs(self.src)
@@ -94,7 +70,7 @@ class TestAutoTorrentUnits(TestCase):
         self.dst = os.path.join(self._temp_path, 'dst')
         os.makedirs(self.dst)
         
-        dirname = os.path.dirname(__file__)
+        dirname = os.path.join(os.path.dirname(__file__), 'testfiles')
         self.db = DummyDatabase()
         self.client = DummyClient()
         
@@ -117,11 +93,20 @@ class TestAutoTorrentUnits(TestCase):
         self.files = []
         for f in ['a', 'b', 'c']:
             f = 'file_%s.txt' % f
-            src = os.path.join(dirname, 'testfiles', f)
+            src = os.path.join(dirname, f)
             dst = os.path.join(self.src, f)
             
             shutil.copy(src, dst)
             self.files.append(dst)
+        
+        paths = []
+        for f in ['Some-CD-Release', 'Some-Release']:
+            src = os.path.join(dirname, f)
+            dst = os.path.join(self.src, f)
+            shutil.copytree(src, dst)
+            shutil.copy(src + '.torrent', dst + '.torrent')
+            paths.append(dst)
+        self.actual_db = Database(os.path.join(self._temp_path, 'db.db'), paths, '', True)
 
     def tearDown(self):
         if self._temp_path.startswith('/tmp'): # paranoid-mon, the best pokemon.
@@ -292,3 +277,197 @@ class TestAutoTorrentUnits(TestCase):
     def test_link_files_hard(self):
         self.at.link_type = 'hard'
         self.test_link_files_soft()
+    
+    def test_index_torrent(self):
+        self.actual_db.rebuild()
+        self.at.db = self.actual_db
+        
+        with open(os.path.join(self.src, 'Some-Release.torrent'), 'rb') as f:
+            torrent = bdecode(f.read())
+        
+        listing = self.at.index_torrent(torrent)
+        for item in listing:
+            item['actual_path'] = item['actual_path'][len(self._temp_path):].lstrip('/')
+
+        expected_listing = [{'actual_path': 'src/Some-Release/Sample/some-rls.mkv',
+            'completed': True,
+            'length': 12,
+            'path': ['Sample', 'some-rls.mkv']},
+           {'actual_path': 'src/Some-Release/Subs/some-subs.rar',
+            'completed': True,
+            'length': 12,
+            'path': ['Subs', 'some-subs.rar']},
+           {'actual_path': 'src/Some-Release/Subs/some-subs.sfv',
+            'completed': True,
+            'length': 12,
+            'path': ['Subs', 'some-subs.sfv']},
+           {'actual_path': 'src/Some-Release/some-rls.nfo',
+            'completed': True,
+            'length': 12,
+            'path': ['some-rls.nfo']},
+           {'actual_path': 'src/Some-Release/some-rls.r00',
+            'completed': True,
+            'length': 12,
+            'path': ['some-rls.r00']},
+           {'actual_path': 'src/Some-Release/some-rls.r01',
+            'completed': True,
+            'length': 12,
+            'path': ['some-rls.r01']},
+           {'actual_path': 'src/Some-Release/some-rls.r02',
+            'completed': True,
+            'length': 12,
+            'path': ['some-rls.r02']},
+           {'actual_path': 'src/Some-Release/some-rls.r03',
+            'completed': True,
+            'length': 12,
+            'path': ['some-rls.r03']},
+           {'actual_path': 'src/Some-Release/some-rls.r04',
+            'completed': True,
+            'length': 12,
+            'path': ['some-rls.r04']},
+           {'actual_path': 'src/Some-Release/some-rls.r05',
+            'completed': True,
+            'length': 12,
+            'path': ['some-rls.r05']},
+           {'actual_path': 'src/Some-Release/some-rls.r06',
+            'completed': True,
+            'length': 12,
+            'path': ['some-rls.r06']},
+           {'actual_path': 'src/Some-Release/some-rls.rar',
+            'completed': True,
+            'length': 12,
+            'path': ['some-rls.rar']},
+           {'actual_path': 'src/Some-Release/some-rls.sfv',
+            'completed': True,
+            'length': 12,
+            'path': ['some-rls.sfv']}]
+        
+        self.assertEqual(listing, expected_listing)
+    
+    def test_index_torrent_scene_mode_multicd(self):
+        self.actual_db.rebuild()
+        self.at.db = self.actual_db
+        
+        with open(os.path.join(self.src, 'Some-CD-Release.torrent'), 'rb') as f:
+            torrent = bdecode(f.read())
+        
+        listing = self.at.index_torrent(torrent)
+        for item in listing:
+            item['actual_path'] = item['actual_path'][len(self._temp_path):].lstrip('/')
+        
+        expected_listing = [{'actual_path': 'src/Some-CD-Release/CD1/somestuff-1.r00',
+            'completed': True,
+            'length': 11,
+            'path': ['CD1', 'somestuff-1.r00']},
+           {'actual_path': 'src/Some-CD-Release/CD1/somestuff-1.r01',
+            'completed': True,
+            'length': 11,
+            'path': ['CD1', 'somestuff-1.r01']},
+           {'actual_path': 'src/Some-CD-Release/CD1/somestuff-1.r02',
+            'completed': True,
+            'length': 11,
+            'path': ['CD1', 'somestuff-1.r02']},
+           {'actual_path': 'src/Some-CD-Release/CD1/somestuff-1.r03',
+            'completed': True,
+            'length': 11,
+            'path': ['CD1', 'somestuff-1.r03']},
+           {'actual_path': 'src/Some-CD-Release/CD1/somestuff-1.r04',
+            'completed': True,
+            'length': 11,
+            'path': ['CD1', 'somestuff-1.r04']},
+           {'actual_path': 'src/Some-CD-Release/CD1/somestuff-1.r05',
+            'completed': True,
+            'length': 11,
+            'path': ['CD1', 'somestuff-1.r05']},
+           {'actual_path': 'src/Some-CD-Release/CD1/somestuff-1.r06',
+            'completed': True,
+            'length': 11,
+            'path': ['CD1', 'somestuff-1.r06']},
+           {'actual_path': 'src/Some-CD-Release/CD1/somestuff-1.rar',
+            'completed': True,
+            'length': 11,
+            'path': ['CD1', 'somestuff-1.rar']},
+           {'actual_path': 'src/Some-CD-Release/CD1/somestuff-1.sfv',
+            'completed': True,
+            'length': 11,
+            'path': ['CD1', 'somestuff-1.sfv']},
+           {'actual_path': 'src/Some-CD-Release/CD2/somestuff-2.r00',
+            'completed': True,
+            'length': 11,
+            'path': ['CD2', 'somestuff-2.r00']},
+           {'actual_path': 'src/Some-CD-Release/CD2/somestuff-2.r01',
+            'completed': True,
+            'length': 11,
+            'path': ['CD2', 'somestuff-2.r01']},
+           {'actual_path': 'src/Some-CD-Release/CD2/somestuff-2.r02',
+            'completed': True,
+            'length': 11,
+            'path': ['CD2', 'somestuff-2.r02']},
+           {'actual_path': 'src/Some-CD-Release/CD2/somestuff-2.r03',
+            'completed': True,
+            'length': 11,
+            'path': ['CD2', 'somestuff-2.r03']},
+           {'actual_path': 'src/Some-CD-Release/CD2/somestuff-2.r04',
+            'completed': True,
+            'length': 11,
+            'path': ['CD2', 'somestuff-2.r04']},
+           {'actual_path': 'src/Some-CD-Release/CD2/somestuff-2.r05',
+            'completed': True,
+            'length': 11,
+            'path': ['CD2', 'somestuff-2.r05']},
+           {'actual_path': 'src/Some-CD-Release/CD2/somestuff-2.r06',
+            'completed': True,
+            'length': 11,
+            'path': ['CD2', 'somestuff-2.r06']},
+           {'actual_path': 'src/Some-CD-Release/CD2/somestuff-2.r07',
+            'completed': True,
+            'length': 11,
+            'path': ['CD2', 'somestuff-2.r07']},
+           {'actual_path': 'src/Some-CD-Release/CD2/somestuff-2.rar',
+            'completed': True,
+            'length': 11,
+            'path': ['CD2', 'somestuff-2.rar']},
+           {'actual_path': 'src/Some-CD-Release/CD2/somestuff-2.sfv',
+            'completed': True,
+            'length': 11,
+            'path': ['CD2', 'somestuff-2.sfv']},
+           {'actual_path': 'src/Some-CD-Release/Sample/some-rls.mkv',
+            'completed': True,
+            'length': 12,
+            'path': ['Sample', 'some-rls.mkv']},
+           {'actual_path': 'src/Some-CD-Release/Subs/somestuff-subs.r00',
+            'completed': True,
+            'length': 11,
+            'path': ['Subs', 'somestuff-subs.r00']},
+           {'actual_path': 'src/Some-CD-Release/Subs/somestuff-subs.rar',
+            'completed': True,
+            'length': 11,
+            'path': ['Subs', 'somestuff-subs.rar']},
+           {'actual_path': 'src/Some-CD-Release/Subs/somestuff-subs.sfv',
+            'completed': True,
+            'length': 11,
+            'path': ['Subs', 'somestuff-subs.sfv']},
+           {'actual_path': 'src/Some-CD-Release/crap.nfo',
+            'completed': True,
+            'length': 11,
+            'path': ['crap.nfo']}]
+        
+        self.assertEqual(listing, expected_listing)
+    
+    def test_handle_torrentfile_scene(self):
+        self.actual_db.rebuild()
+        self.at.db = self.actual_db
+        
+        self.assertEqual(self.at.handle_torrentfile(os.path.join(self.src, 'Some-Release.torrent')), Status.OK)
+        
+        self.assertTrue(os.path.isfile(self.torrent_file))
+        self.assertTrue(self._check_at_log(Status.OK))
+    
+    def test_handle_torrentfile_scene_multicd(self):
+        self.actual_db.rebuild()
+        self.at.db = self.actual_db
+        
+        self.assertEqual(self.at.handle_torrentfile(os.path.join(self.src, 'Some-CD-Release.torrent')), Status.OK)
+        
+        self.assertTrue(os.path.isfile(self.torrent_file))
+        self.assertTrue(self._check_at_log(Status.OK))

@@ -4,8 +4,11 @@ import os
 import hashlib
 import logging
 
+from collections import defaultdict
+
 from .bencode import bencode, bdecode
 from .humanize import humanize_bytes
+from .utils import is_scene_modeable, get_actual_scene_name
 
 logger = logging.getLogger('autotorrent')
 
@@ -69,34 +72,80 @@ class AutoTorrent(object):
 
     def index_torrent(self, torrent):
         """
-        Indexes the files in a torrent
+        Indexes the files in the torrent.
         """
-        files = []
+        result = []
         if b'files' in torrent[b'info']: # multifile torrent
-            for f in torrent[b'info'][b'files']:
-                path = [x.decode('utf-8') for x in f[b'path']]
-                length = f[b'length']
-                actual_path = self.db.find_file_path(path[-1], length)
+            files_sorted = {}
+            files = {}
+            if b'files' in torrent[b'info']:
+                torrent_name = torrent[b'info'][b'name'].decode('utf-8')
+                logger.info('Found name %r for torrent' % torrent_name)
                 
-                files.append({
-                    'actual_path': actual_path,
-                    'length': length,
-                    'path': path,
-                    'completed': actual_path is not None,
-                })
+                i = 0
+                path_files = defaultdict(list)
+                for f in torrent[b'info'][b'files']:
+                    orig_path = [x.decode('utf-8') for x in f[b'path']]
+                    path = [torrent_name] + orig_path
+                    name = path.pop()
+                    
+                    path_files[os.path.join(*path)].append({
+                        'path': orig_path,
+                        'length': f[b'length'],
+                    })
+                    
+                    files_sorted['/'.join(orig_path)] = i
+                    i += 1
+            
+            if self.db.scene_mode:
+                scene_paths = set()
+                for path, files in path_files.items():
+                    if is_scene_modeable(f['path'][-1] for f in files):
+                        path = path.split(os.sep)
+                        name = get_actual_scene_name(path)
+                        if not name:
+                            continue
+                        
+                        while path[-1] != name:
+                            path.pop()
+                        scene_paths.add(os.path.join(*path))
+            
+            for path, files in path_files.items():
+                if self.db.scene_mode:
+                    path = path.split(os.sep)
+                    while path and os.path.join(*path) not in scene_paths:
+                        path.pop()
+                else:
+                    path = None
+                
+                if path:
+                    name = path[-1]
+                    for f in files:
+                        actual_path = self.db.find_scene_file_path(name, f['path'][-1], f['length'])
+                        f['actual_path'] = actual_path
+                        f['completed'] = actual_path is not None
+                    result += files
+                else:
+                    for f in files:
+                        actual_path = self.db.find_file_path(f['path'][-1], f['length'])
+                        f['actual_path'] = actual_path
+                        f['completed'] = actual_path is not None
+                    result += files
+            # resort the torrent to fit original ordering
+            result = sorted(result, key=lambda x:files_sorted['/'.join(x['path'])])
+            
         else: # singlefile torrent
             path = torrent[b'info'][b'name'].decode('utf-8')
             length = torrent[b'info'][b'length']
             actual_path = self.db.find_file_path(path, length)
             
-            files.append({
+            result.append({
                 'actual_path': actual_path,
                 'length': length,
                 'path': [path],
                 'completed': actual_path is not None,
             })
-
-        return files
+        return result
 
     def parse_torrent(self, torrent):
         """
