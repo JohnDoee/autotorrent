@@ -34,8 +34,17 @@ class TestDatabase(TestCase):
         for p, size in self._fs:
             create_file(self._temp_path, p, size)
         
+        os.makedirs(os.path.join(self._temp_path, '3'))
+        dirname = os.path.join(os.path.dirname(__file__), 'testfiles')
+        for f in ['Some-CD-Release', 'Some-Release']:
+            src = os.path.join(dirname, f)
+            dst = os.path.join(self._temp_path, '3', f)
+            shutil.copytree(src, dst)
+            shutil.copy(src + '.torrent', dst + '.torrent')
+        
         self.db = Database(os.path.join(self._temp_path, 'autotorrent.db'), [os.path.join(self._temp_path, '1'),
-                                                                             os.path.join(self._temp_path, '2')], [])
+                                                                             os.path.join(self._temp_path, '2'),
+                                                                             os.path.join(self._temp_path, '3')], [], True)
         self.db.rebuild()
     
     def tearDown(self):
@@ -102,3 +111,26 @@ class TestDatabase(TestCase):
         self.test_initial_build()
         
         self.assertEqual(self.db.find_file_path('\xc6', 16), os.path.join(self._temp_path, '2', '\xc6'))
+    
+    def test_scene_release(self):
+        self.assertEqual(self.db.find_scene_file_path('Some-Release', 'some-rls.r01', 12),
+                         os.path.join(self._temp_path, '3', 'Some-Release', 'some-rls.r01'))
+        
+        self.assertEqual(self.db.find_scene_file_path('Some-Release', 'some-rls.sfv', 12),
+                         os.path.join(self._temp_path, '3', 'Some-Release', 'some-rls.sfv'))
+        
+        self.assertEqual(self.db.find_scene_file_path('Some-Release', 'some-rls.mkv', 12),
+                         os.path.join(self._temp_path, '3', 'Some-Release', 'Sample', 'some-rls.mkv'))
+        
+    def test_scene_release_multicd(self):
+        self.assertEqual(self.db.find_scene_file_path('Some-CD-Release', 'somestuff-1.r04', 11),
+                         os.path.join(self._temp_path, '3', 'Some-CD-Release', 'CD1', 'somestuff-1.r04'))
+        
+        self.assertEqual(self.db.find_scene_file_path('Some-CD-Release', 'somestuff-2.r04', 11),
+                         os.path.join(self._temp_path, '3', 'Some-CD-Release', 'CD2', 'somestuff-2.r04'))
+        
+        self.assertEqual(self.db.find_scene_file_path('Some-CD-Release', 'somestuff-subs.rar', 11),
+                         os.path.join(self._temp_path, '3', 'Some-CD-Release', 'Subs', 'somestuff-subs.rar'))
+        
+        self.assertEqual(self.db.find_scene_file_path('Some-CD-Release', 'some-rls.mkv', 12),
+                         os.path.join(self._temp_path, '3', 'Some-CD-Release', 'Sample', 'some-rls.mkv'))

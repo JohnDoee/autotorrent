@@ -42,7 +42,8 @@ def commandline_handler():
         i += 1
     
     db = Database(config.get('general', 'db'), disks,
-                  config.get('general', 'ignore_files').split(','))
+                  config.get('general', 'ignore_files').split(','),
+                  config.get('general', 'scene_mode'))
     
     client_name = config.get('client', 'client')
     if client_name == 'rtorrent':
