@@ -47,6 +47,9 @@ status_messages = {
 class UnknownLinkTypeException(Exception):
     pass
 
+class IllegalPathException(Exception):
+    pass
+
 class AutoTorrent(object):
     def __init__(self, db, client, store_path, add_limit_size, add_limit_percent, delete_torrents, link_type='soft'):
         self.db = db
@@ -58,6 +61,12 @@ class AutoTorrent(object):
         self.link_type = link_type
         self.torrents_seeded = set()
 
+    def is_legal_path(self, path):
+        for p in path:
+            if p in ['.', '..'] or '/' in p:
+                return False
+        return True
+    
     def populate_torrents_seeded(self):
         """
         Fetches a list of currently-seeded info hashes
@@ -74,18 +83,24 @@ class AutoTorrent(object):
         """
         Indexes the files in the torrent.
         """
+        torrent_name = torrent[b'info'][b'name'].decode('utf-8')
+        if not self.is_legal_path([torrent_name]):
+            raise IllegalPathException('That is a dangerous torrent name %r, bailing' % torrent_name)
+        
         result = []
         if b'files' in torrent[b'info']: # multifile torrent
             files_sorted = {}
             files = {}
             if b'files' in torrent[b'info']:
-                torrent_name = torrent[b'info'][b'name'].decode('utf-8')
                 logger.info('Found name %r for torrent' % torrent_name)
                 
                 i = 0
                 path_files = defaultdict(list)
                 for f in torrent[b'info'][b'files']:
                     orig_path = [x.decode('utf-8') for x in f[b'path']]
+                    if not self.is_legal_path(orig_path):
+                        raise IllegalPathException('That is a dangerous torrent path %r, bailing' % orig_path)
+                    
                     path = [torrent_name] + orig_path
                     name = path.pop()
                     
@@ -135,14 +150,13 @@ class AutoTorrent(object):
             result = sorted(result, key=lambda x:files_sorted['/'.join(x['path'])])
             
         else: # singlefile torrent
-            path = torrent[b'info'][b'name'].decode('utf-8')
             length = torrent[b'info'][b'length']
-            actual_path = self.db.find_file_path(path, length)
+            actual_path = self.db.find_file_path(torrent_name, length)
             
             result.append({
                 'actual_path': actual_path,
                 'length': length,
-                'path': [path],
+                'path': [torrent_name],
                 'completed': actual_path is not None,
             })
         return result
