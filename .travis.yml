@@ -5,7 +5,7 @@ python:
   - "2.7"
   - "2.6"
 install:
-  - pip install six coveralls
+  - pip install six coveralls deluge-client
 script:
   - nosetests --with-coverage --cover-package=autotorrent
 after_success:
