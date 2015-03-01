@@ -58,7 +58,7 @@ class TestRTorrentClient(TestCase):
             files.append({
                 'completed': (letter in letters),
                 'length': 11,
-                'path': os.path.join('/tmp/', filename),
+                'path': ['tmp', filename],
             })
         
         return self.client.add_torrent(torrent, '/tmp/', files)

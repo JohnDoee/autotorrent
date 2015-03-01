@@ -57,13 +57,22 @@ NFOs and other small files that makes a difference in the torrents.
 client
 ~~~~~~
 
--  client - only rtorrent supported right no, so must be rtorrent
+-  client - torrent client to use, choices are: rtorrent and deluge
+
+rtorrent settings
+*****************
 -  url - URL to rtorrent, must be to the XMLRPC server or SCGI server.
 -  label - Label added to torrents when added to rtorrent (used in
    rutorrent only)
 
 the url supports both SCGI directly and XMLRPC via HTTP.
 To use scgi, prefix the url with scgi instead of http, e.g. scgi://127.0.0.1:10000/
+
+deluge settings
+***************
+- host - an ip:port pair, e.g. 127.0.0.1:12345
+- username - deluge rpc username
+- password - deluge rpc password
 
 disks
 ~~~~~
