@@ -3,7 +3,7 @@ AutoTorrent
 
 Given an input torrent, it will scan your collection for the files in
 the torrent. If all (or most) the files are found, a folder with links to all the
-files will be created and the torrent added to rTorrent.
+files will be created and the torrent added to the torrent client.
 
 All you need to do is download the torrents and AutoTorrent plays mix and match
 to make it possible to seed as much as possible across trackers.
@@ -12,7 +12,7 @@ Requirements
 ------------
 
 - Linux, BSD, OSX - Something not windows
-- rTorrent
+- rTorrent and Deluge
 - Python 2.6, 2.7, 3.3, 3.4
 - Shell / SSH / Putty
 

@@ -6,8 +6,6 @@ from six.moves import configparser
 
 from autotorrent.at import AutoTorrent
 from autotorrent.db import Database
-from autotorrent.clients.deluge import DelugeClient
-from autotorrent.clients.rtorrent import RTorrentClient
 
 def commandline_handler():
     parser = argparse.ArgumentParser()
@@ -48,9 +46,11 @@ def commandline_handler():
     
     client_name = config.get('client', 'client')
     if client_name == 'rtorrent':
+        from autotorrent.clients.rtorrent import RTorrentClient
         client = RTorrentClient(config.get('client', 'url'),
                                 config.get('client', 'label'))
     elif client_name == 'deluge':
+        from autotorrent.clients.deluge import DelugeClient
         host, port = config.get('client', 'host').split(':')
         client = DelugeClient(host, int(port),
                               config.get('client', 'username'),
