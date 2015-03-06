@@ -5,7 +5,7 @@ store_path=/home/rtorrent/myseeds/
 add_limit_size=64000000
 add_limit_percent=1
 link_type=soft
-scene_mode=true
+scan_mode=unsplitable,normal
 
 [disks]
 disk1=/mnt/sd1/anime/

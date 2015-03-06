@@ -40,9 +40,23 @@ def commandline_handler():
         disks.append(config.get('disks', 'disk%s' % i))
         i += 1
     
+    normal_mode = False
+    unsplitable_mode = False
+    exact_mode = False
+    scan_mode = set(config.get('general', 'scan_mode').split(','))
+    
+    if 'exact' in scan_mode:
+        exact_mode = True
+    
+    if 'unsplitable' in scan_mode:
+        unsplitable_mode = True
+    
+    if 'normal' in scan_mode:
+        normal_mode = True
+    
     db = Database(config.get('general', 'db'), disks,
                   config.get('general', 'ignore_files').split(','),
-                  config.get('general', 'scene_mode'))
+                  normal_mode, unsplitable_mode, exact_mode)
     
     client_name = config.get('client', 'client')
     if client_name == 'rtorrent':

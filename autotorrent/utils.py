@@ -2,23 +2,36 @@ import os
 import re
 
 __all__ = [
-    'is_scene_modeable',
-    'get_actual_scene_name',
+    'is_unsplitable',
+    'get_root_of_unsplitable',
 ]
 
-SCENE_FILE_EXTENSIONS = set([
-    '.rar',
-    '.mp3',
-])
+UNSPLITABLE_FILE_EXTENSIONS = [
+    set(['.rar', '.sfv']),
+    set(['.mp3', '.sfv']),
+    set(['.vob', '.ifo']),
+]
 
-def is_scene_modeable(files):
+def is_unsplitable(files):
     """
-    Checks if a list of files can be considered scene stuff
+    Checks if a list of files can be considered unsplitable, e.g. VOB/IFO or scene release.
+    This means the files can only be used in this combination.
     """
     extensions = set(os.path.splitext(f)[1].lower() for f in files)
-    return '.sfv' in extensions and SCENE_FILE_EXTENSIONS & extensions
+    found_unsplitable_extensions = False
+    for exts in UNSPLITABLE_FILE_EXTENSIONS:
+        if len(extensions & exts) == len(exts):
+            found_unsplitable_extensions = True
+            break
+    
+    lowercased_files = set([f.lower() for f in files])
+    found_magic_file = False
+    if 'movieobject.bdmv' in lowercased_files:
+        found_magic_file = True
+    
+    return found_unsplitable_extensions or found_magic_file
 
-def get_actual_scene_name(path):
+def get_root_of_unsplitable(path):
     """
     Scans a path for the actual scene release name, e.g. skipping cd1 folders.
     
@@ -29,16 +42,11 @@ def get_actual_scene_name(path):
         if not p:
             continue
         
-        if re.match('^cd[1-9]$', p, re.IGNORECASE):
+        if re.match(r'^(cd[1-9])|(samples?)|(proofs?)|((vob)?sub(title)?s?)$', p, re.IGNORECASE): # scene paths
             continue
         
-        if re.match('^samples?$', p, re.IGNORECASE):
+        if re.match(r'^(bdmv)|(disc\d*)|(video_ts)$', p, re.IGNORECASE): # bluray / dd
             continue
         
-        if re.match('^proofs?$', p, re.IGNORECASE):
-            continue
-        
-        if re.match('^(vob)?sub(title)?s?$', p, re.IGNORECASE):
-            continue
         
         return p
