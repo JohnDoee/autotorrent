@@ -1,5 +1,16 @@
-Version Development ()
+Version 1.5.0 ()
 ===========================================================
+
+*   Feature: Added a new mode called "exact" where items
+    are not linked, but the client is pointed to the exact
+    matched folder. This feature is meant to facilitate client
+    change.
+*   Feature: Added support for Deluge
+*   Change: Configuration file changed to fit the new
+    multi-client format
+*   Change: Renamed scene mode to unsplitable mode and added
+    support for bluray (m2ts) and dvd (ifo/vob)
+
 
 Version 1.4.0 (22-02-2015)
 ===========================================================

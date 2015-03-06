@@ -26,7 +26,9 @@ def create_file(temp_folder, path, size):
 class DummyDatabase(Database):
     def __init__(self):
         self.db = {}
-        self.scene_mode = True
+        self.normal_mode = True
+        self.unsplitable_mode = True
+        self.exact_mode = True
     
     def truncate(self):
         pass
@@ -58,6 +60,7 @@ class DummyClient(object):
     def add_torrent(self, torrent, destination_path, files):
         infohash = hashlib.sha1(bencode(torrent[b'info'])).hexdigest()
         self.hashes.add(infohash)
+        self.last_destination_path = destination_path
         return True
 
 class TestAutoTorrent(TestCase):
@@ -99,14 +102,14 @@ class TestAutoTorrent(TestCase):
             shutil.copy(src, dst)
             self.files.append(dst)
         
-        paths = []
-        for f in ['Some-CD-Release', 'Some-Release']:
+        paths = set()
+        for f in ['Some-CD-Release', 'Some-Release', 'My-Bluray', 'My-DVD']:
             src = os.path.join(dirname, f)
             dst = os.path.join(self.src, f)
             shutil.copytree(src, dst)
             shutil.copy(src + '.torrent', dst + '.torrent')
-            paths.append(dst)
-        self.actual_db = Database(os.path.join(self._temp_path, 'db.db'), paths, '', True)
+            paths.add(os.path.dirname(dst))
+        self.actual_db = Database(os.path.join(self._temp_path, 'db.db'), list(paths), '', True, True, False)
 
     def tearDown(self):
         if self._temp_path.startswith('/tmp'): # paranoid-mon, the best pokemon.
@@ -126,21 +129,23 @@ class TestAutoTorrent(TestCase):
         self.db.add_file('file_b.txt', 11)
         self.db.add_file('file_c.txt', 11)
         
-        files = self.at.index_torrent(self.torrent)
+        result = self.at.index_torrent(self.torrent)
         
-        self.assertEqual(files, [{'path': ['file_a.txt'], 'length': 11, 'completed': True, 'actual_path': 'file_a.txt'},
+        self.assertEqual(result['files'], [{'path': ['file_a.txt'], 'length': 11, 'completed': True, 'actual_path': 'file_a.txt'},
                                  {'path': ['file_b.txt'], 'length': 11, 'completed': True, 'actual_path': 'file_b.txt'},
                                  {'path': ['file_c.txt'], 'length': 11, 'completed': True, 'actual_path': 'file_c.txt'}])
+        self.assertEqual(result['mode'], 'link')
     
     def test_index_torrent_multifile_missing(self):
         self.db.add_file('file_a.txt', 11)
         self.db.add_file('file_c.txt', 11)
         
-        files = self.at.index_torrent(self.torrent)
+        result = self.at.index_torrent(self.torrent)
         
-        self.assertEqual(files, [{'path': ['file_a.txt'], 'length': 11, 'completed': True, 'actual_path': 'file_a.txt'},
+        self.assertEqual(result['files'], [{'path': ['file_a.txt'], 'length': 11, 'completed': True, 'actual_path': 'file_a.txt'},
                                  {'path': ['file_b.txt'], 'length': 11, 'completed': False, 'actual_path': None},
                                  {'path': ['file_c.txt'], 'length': 11, 'completed': True, 'actual_path': 'file_c.txt'}])
+        self.assertEqual(result['mode'], 'link')
     
     def test_check_torrent_in_client(self):
         self.assertFalse(self.at.check_torrent_in_client(self.torrent))
@@ -155,21 +160,25 @@ class TestAutoTorrent(TestCase):
         self.assertEqual(self.at.open_torrentfile(self.torrent_file), self.torrent)
     
     def test_index_torrent_singlefile_missing(self):
-        self.assertEqual(self.at.index_torrent(self.torrent_single), [{
+        result = self.at.index_torrent(self.torrent_single)
+        self.assertEqual(result['files'], [{
             'actual_path': None,
             'length': 11,
             'path': ['file_a.txt'],
             'completed': False,
         }])
+        self.assertEqual(result['mode'], 'link')
     
     def test_index_torrent_singlefile(self):
         self.db.add_file('file_a.txt', 11)
-        self.assertEqual(self.at.index_torrent(self.torrent_single), [{
+        result = self.at.index_torrent(self.torrent_single)
+        self.assertEqual(result['files'], [{
             'actual_path': 'file_a.txt',
             'length': 11,
             'path': ['file_a.txt'],
             'completed': True,
         }])
+        self.assertEqual(result['mode'], 'link')
     
     def test_parse_torrent(self):
         self.db.add_file('file_a.txt', 11)
@@ -285,7 +294,8 @@ class TestAutoTorrent(TestCase):
         with open(os.path.join(self.src, 'Some-Release.torrent'), 'rb') as f:
             torrent = bdecode(f.read())
         
-        listing = self.at.index_torrent(torrent)
+        result = self.at.index_torrent(torrent)
+        listing = result['files']
         for item in listing:
             item['actual_path'] = item['actual_path'][len(self._temp_path):].lstrip('/')
 
@@ -344,14 +354,15 @@ class TestAutoTorrent(TestCase):
         
         self.assertEqual(listing, expected_listing)
     
-    def test_index_torrent_scene_mode_multicd(self):
+    def test_index_torrent_unsplitable_mode_multicd(self):
         self.actual_db.rebuild()
         self.at.db = self.actual_db
         
         with open(os.path.join(self.src, 'Some-CD-Release.torrent'), 'rb') as f:
             torrent = bdecode(f.read())
         
-        listing = self.at.index_torrent(torrent)
+        result = self.at.index_torrent(torrent)
+        listing = result['files']
         for item in listing:
             item['actual_path'] = item['actual_path'][len(self._temp_path):].lstrip('/')
         
@@ -454,7 +465,7 @@ class TestAutoTorrent(TestCase):
         
         self.assertEqual(listing, expected_listing)
     
-    def test_handle_torrentfile_scene(self):
+    def test_handle_torrentfile_unsplitable(self):
         self.actual_db.rebuild()
         self.at.db = self.actual_db
         
@@ -463,7 +474,7 @@ class TestAutoTorrent(TestCase):
         self.assertTrue(os.path.isfile(self.torrent_file))
         self.assertTrue(self._check_at_log(Status.OK))
     
-    def test_handle_torrentfile_scene_multicd(self):
+    def test_handle_torrentfile_unsplitable_multicd(self):
         self.actual_db.rebuild()
         self.at.db = self.actual_db
         
@@ -471,3 +482,87 @@ class TestAutoTorrent(TestCase):
         
         self.assertTrue(os.path.isfile(self.torrent_file))
         self.assertTrue(self._check_at_log(Status.OK))
+    
+    def test_exact_multifile_torrent(self):
+        self.actual_db.exact_mode = True
+        self.actual_db.rebuild()
+        self.at.db = self.actual_db
+        
+        self.assertEqual(self.at.handle_torrentfile(os.path.join(self.src, 'Some-Release.torrent')), Status.OK)
+        self.assertEqual(self.client.last_destination_path[len(self._temp_path):].lstrip('/'), 'src/Some-Release')
+    
+    def test_link_singlefile_torrent(self):
+        self.actual_db.rebuild()
+        self.at.db = self.actual_db
+        
+        self.assertEqual(self.at.handle_torrentfile(os.path.join(self._temp_path, 'test_single.torrent')), Status.OK)
+        self.assertEqual(self.client.last_destination_path[len(self._temp_path):].lstrip('/'), 'dst/test_single')
+    
+    def test_exact_singlefile_torrent(self):
+        self.actual_db.exact_mode = True
+        self.actual_db.rebuild()
+        self.at.db = self.actual_db
+        
+        self.assertEqual(self.at.handle_torrentfile(os.path.join(self._temp_path, 'test_single.torrent')), Status.OK)
+        self.assertEqual(self.client.last_destination_path[len(self._temp_path):].lstrip('/'), 'src')
+    
+    def test_exact_bluray_torrent(self):
+        self.actual_db.exact_mode = True
+        self.actual_db.rebuild()
+        self.at.db = self.actual_db
+        
+        self.assertEqual(self.at.handle_torrentfile(os.path.join(self.src, 'My-Bluray.torrent')), Status.OK)
+        self.assertEqual(self.client.last_destination_path[len(self._temp_path):].lstrip('/'), 'src/My-Bluray')
+    
+    def test_exact_dvd_torrent(self):
+        self.actual_db.exact_mode = True
+        self.actual_db.rebuild()
+        self.at.db = self.actual_db
+        
+        self.assertEqual(self.at.handle_torrentfile(os.path.join(self.src, 'My-DVD.torrent')), Status.OK)
+        self.assertEqual(self.client.last_destination_path[len(self._temp_path):].lstrip('/'), 'src/My-DVD')
+    
+    def test_index_torrent_exact_mode(self):
+        self.actual_db.exact_mode = True
+        self.actual_db.rebuild()
+        self.at.db = self.actual_db
+        
+        with open(os.path.join(self.src, 'My-Bluray.torrent'), 'rb') as f:
+            torrent = bdecode(f.read())
+        
+        result = self.at.index_torrent(torrent)
+        listing = result['files']
+        for item in listing:
+            item['actual_path'] = item['actual_path'][len(self._temp_path):].lstrip('/')
+        
+        expected_listing = [{'actual_path': 'src/My-Bluray/BDMV/BACKUP/MovieObject.bdmv',
+            'completed': True,
+            'length': 13,
+            'path': ['BDMV', 'BACKUP', 'MovieObject.bdmv']},
+           {'actual_path': 'src/My-Bluray/BDMV/BACKUP/PLAYLIST/00000.mpls',
+            'completed': True,
+            'length': 13,
+            'path': ['BDMV', 'BACKUP', 'PLAYLIST', '00000.mpls']},
+           {'actual_path': 'src/My-Bluray/BDMV/BACKUP/index.bdmv',
+            'completed': True,
+            'length': 13,
+            'path': ['BDMV', 'BACKUP', 'index.bdmv']},
+           {'actual_path': 'src/My-Bluray/BDMV/MovieObject.bdmv',
+            'completed': True,
+            'length': 13,
+            'path': ['BDMV', 'MovieObject.bdmv']},
+           {'actual_path': 'src/My-Bluray/BDMV/PLAYLIST/00000.mpls',
+            'completed': True,
+            'length': 13,
+            'path': ['BDMV', 'PLAYLIST', '00000.mpls']},
+           {'actual_path': 'src/My-Bluray/BDMV/STREAM/00000.m2ts',
+            'completed': True,
+            'length': 13,
+            'path': ['BDMV', 'STREAM', '00000.m2ts']},
+           {'actual_path': 'src/My-Bluray/BDMV/index.bdmv',
+            'completed': True,
+            'length': 13,
+            'path': ['BDMV', 'index.bdmv']}]
+        
+        self.assertEqual(listing, expected_listing)
+        self.assertEqual(result['mode'], 'exact')
