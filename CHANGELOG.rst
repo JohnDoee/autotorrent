@@ -10,6 +10,8 @@ Version 1.5.0 ()
     multi-client format
 *   Change: Renamed scene mode to unsplitable mode and added
     support for bluray (m2ts) and dvd (ifo/vob)
+*   Change: unsplitable mode now relies more on path to find the
+    correct file
 
 
 Version 1.4.0 (22-02-2015)
