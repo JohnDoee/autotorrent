@@ -77,7 +77,8 @@ class RTorrentClient(object):
         logger.info('Trying to add a new torrent to rtorrent: %r' % name)
         
         if fast_resume:
-            logger.info('Trying to do fast resume')
+            logger.info('Trying to do fast resume data')
+            
             psize = torrent[b'info'][b'piece length']
             pieces = len(torrent[b'info'][b'pieces']) // 20
             bitfield = [True] * pieces
