@@ -12,7 +12,7 @@ Requirements
 ------------
 
 - Linux, BSD, OSX - Something not windows
-- rTorrent and Deluge
+- rTorrent, Deluge and Transmission
 - Python 2.6, 2.7, 3.3, 3.4
 - Shell / SSH / Putty
 
@@ -59,7 +59,7 @@ NFOs and other small files that makes a difference in the torrents.
 client
 ~~~~~~
 
--  client - torrent client to use, choices are: rtorrent and deluge
+-  client - torrent client to use, choices are: rtorrent, deluge and transmission
 
 rtorrent settings
 *****************
@@ -75,6 +75,10 @@ deluge settings
 - host - an ip:port pair, e.g. 127.0.0.1:12345
 - username - deluge rpc username
 - password - deluge rpc password
+
+transmission settings
+*********************
+- url - an url where transmission can be reached, e.g. http://username:password@127.0.0.1:9091
 
 disks
 ~~~~~

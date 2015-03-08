@@ -61,6 +61,6 @@ class TestTransmissionClient(TestCase):
     
     def test_add_torrent_complete(self):
         self.assertTrue(self._add_torrent_with_links(['a', 'b', 'c']))
-        self.assertIn(2, self.client._torrents)
+        self.assertTrue((2 in self.client._torrents))
         self.assertEqual(self.client._torrents[2]['paused'], False)
     

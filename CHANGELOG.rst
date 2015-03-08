@@ -1,4 +1,10 @@
-Version 1.5.0 ()
+Version 1.5.1 (08-03-2015)
+===========================================================
+
+*   Bugfix: Readme was not updated properly
+*   Bugfix: Some Python 2.6 tests failed
+
+Version 1.5.0 (08-03-2015)
 ===========================================================
 
 *   Feature: Added a new mode called "exact" where items
