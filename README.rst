@@ -3,7 +3,7 @@ AutoTorrent
 
 Given an input torrent, it will scan your collection for the files in
 the torrent. If all (or most) the files are found, a folder with links to all the
-files will be created and the torrent added to rTorrent.
+files will be created and the torrent added to the torrent client.
 
 All you need to do is download the torrents and AutoTorrent plays mix and match
 to make it possible to seed as much as possible across trackers.
@@ -12,7 +12,7 @@ Requirements
 ------------
 
 - Linux, BSD, OSX - Something not windows
-- rTorrent
+- rTorrent and Deluge
 - Python 2.6, 2.7, 3.3, 3.4
 - Shell / SSH / Putty
 
@@ -50,6 +50,8 @@ general
    to vary
 -  link\_type - What kind of link should AutoTorrent make? the options are
    hard and soft.
+-  scan_mode - options are unsplitable, normal and exact. These can be used
+   in combination. See the scan_mode section for more information.
 
 the add\_limit\_\* variables allow for downloading of e.g. different
 NFOs and other small files that makes a difference in the torrents.
@@ -57,13 +59,22 @@ NFOs and other small files that makes a difference in the torrents.
 client
 ~~~~~~
 
--  client - only rtorrent supported right no, so must be rtorrent
+-  client - torrent client to use, choices are: rtorrent and deluge
+
+rtorrent settings
+*****************
 -  url - URL to rtorrent, must be to the XMLRPC server or SCGI server.
 -  label - Label added to torrents when added to rtorrent (used in
    rutorrent only)
 
 the url supports both SCGI directly and XMLRPC via HTTP.
 To use scgi, prefix the url with scgi instead of http, e.g. scgi://127.0.0.1:10000/
+
+deluge settings
+***************
+- host - an ip:port pair, e.g. 127.0.0.1:12345
+- username - deluge rpc username
+- password - deluge rpc password
 
 disks
 ~~~~~
@@ -72,12 +83,42 @@ A list of disks where to build the search database from.
 
 The keys must be sequential, i.e. disk1, disk2, disk3 etc.
 
+Scan modes
+----------
+
+There are currently three scan modes supported by AutoTorrent. These modes can be
+used in combination and should all improve the end result.
+
+The modes are named normal, exact and unsplitable. They can be combined by adding a comma
+between them, e.g. ``scan_mode=normal,exact,unsplitable``
+
+Mode: normal
+~~~~~~~~~~~~
+
+It takes the filename and size and tries to find files with same name and size.
+
+This mode cannot handle duplicate filename/size pairs.
+
+Mode: exact
+~~~~~~~~~~~
+
+The perfect way to move torrent client as it tries to set the download path to the old path.
+
+This mode does not allow for missing files and is intended to re-add non-renamed back to a torrent client.
+
+Mode: unsplitable
+~~~~~~~~~~~~~~~~~
+
+This mode takes scene releases and extracted dvd/bluray isos into consideration and relies on the folder it thinks
+is the main / head folder. Perfect for cross-seeding scene releases.
+
+
 Instructions
 ------------
 
 Start by installing and configuring.
 
-Step 1, build the database with ``autotorrent -r``, this can take some
+Step 1, build the database with ``autotorrent -r``, this may take some
 time.
 
 Step 2, have some torrents ready and run
@@ -85,12 +126,6 @@ Step 2, have some torrents ready and run
 spit out how it went with adding the torrents.
 
 And you're good to go.
-
-Limitations
------------
-
--  Only works with rtorrent
--  Probably only works on Linux
 
 FAQ
 ---

@@ -13,7 +13,7 @@ def read_description():
 
 setup(
     name='autotorrent',
-    version='1.4.0',
+    version='1.5.0',
     description='AutoTorrent allows easy cross-seeding',
     long_description=read_description(),
     author='Anders Jensen',
@@ -21,7 +21,7 @@ setup(
     maintainer='John Doee',
     url='https://github.com/JohnDoee/autotorrent',
     packages=['autotorrent', 'autotorrent.clients'],
-    install_requires=['six'],
+    install_requires=['six', 'deluge-client', 'requests'],
     license='MIT',
     classifiers=[
         'Development Status :: 4 - Beta',
@@ -35,7 +35,7 @@ setup(
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
-        'Topic :: Communications :: File Sharing'
+        'Topic :: Communications :: File Sharing',
     ],
     entry_points={ 'console_scripts': [
         'autotorrent = autotorrent.cmd:commandline_handler',

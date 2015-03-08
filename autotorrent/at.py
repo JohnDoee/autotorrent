@@ -8,7 +8,7 @@ from collections import defaultdict
 
 from .bencode import bencode, bdecode
 from .humanize import humanize_bytes
-from .utils import is_scene_modeable, get_actual_scene_name
+from .utils import is_unsplitable, get_root_of_unsplitable
 
 logger = logging.getLogger('autotorrent')
 
@@ -47,6 +47,9 @@ status_messages = {
 class UnknownLinkTypeException(Exception):
     pass
 
+class IllegalPathException(Exception):
+    pass
+
 class AutoTorrent(object):
     def __init__(self, db, client, store_path, add_limit_size, add_limit_percent, delete_torrents, link_type='soft'):
         self.db = db
@@ -58,6 +61,12 @@ class AutoTorrent(object):
         self.link_type = link_type
         self.torrents_seeded = set()
 
+    def is_legal_path(self, path):
+        for p in path:
+            if p in ['.', '..'] or '/' in p:
+                return False
+        return True
+    
     def populate_torrents_seeded(self):
         """
         Fetches a list of currently-seeded info hashes
@@ -74,18 +83,73 @@ class AutoTorrent(object):
         """
         Indexes the files in the torrent.
         """
+        torrent_name = torrent[b'info'][b'name'].decode('utf-8')
+        if not self.is_legal_path([torrent_name]):
+            raise IllegalPathException('That is a dangerous torrent name %r, bailing' % torrent_name)
+        
+        logger.info('Found name %r for torrent' % torrent_name)
+        
+        if self.db.exact_mode:
+            prefix = 'd' if b'files' in torrent[b'info'] else 'f'
+            
+            paths = self.db.find_exact_file_path(prefix, torrent_name)
+            if paths:
+                for path in paths:
+                    logger.debug('Checking exact path %r' % path)
+                    if prefix == 'f':
+                        logger.info('Did an exact match to a file')
+                        size = os.path.getsize(path)
+                        if torrent[b'info'][b'length'] != size:
+                            continue
+                        
+                        return {'mode': 'exact',
+                                'source_path': os.path.dirname(path),
+                                'files': [{
+                                    'actual_path': path,
+                                    'length': size,
+                                    'path': [torrent_name],
+                                    'completed': True,
+                                }]}
+                    else:
+                        result = []
+                        for f in torrent[b'info'][b'files']:
+                            orig_path = [x.decode('utf-8') for x in f[b'path']]
+                            p = os.path.join(path, *orig_path)
+                            
+                            if not os.path.isfile(p):
+                                logger.debug('File %r does not exist' % p)
+                                break
+                            
+                            size = os.path.getsize(p)
+                            if size != f[b'length']:
+                                logger.debug('File %r did not match, this is not exact (got size %s, expected %s)' % (p, size, f[b'length']))
+                                break
+                            
+                            result.append({
+                                'actual_path': p,
+                                'length': f[b'length'],
+                                'path': orig_path,
+                                'completed': True,
+                            })
+                        else:
+                            logger.info('Did an exact match to a path')
+                            return {'mode': 'exact',
+                                    'source_path': path,
+                                    'files': result}
+        
         result = []
         if b'files' in torrent[b'info']: # multifile torrent
             files_sorted = {}
             files = {}
             if b'files' in torrent[b'info']:
-                torrent_name = torrent[b'info'][b'name'].decode('utf-8')
-                logger.info('Found name %r for torrent' % torrent_name)
                 
                 i = 0
                 path_files = defaultdict(list)
                 for f in torrent[b'info'][b'files']:
                     orig_path = [x.decode('utf-8') for x in f[b'path']]
+                    if not self.is_legal_path(orig_path):
+                        raise IllegalPathException('That is a dangerous torrent path %r, bailing' % orig_path)
+                    
                     path = [torrent_name] + orig_path
                     name = path.pop()
                     
@@ -97,23 +161,23 @@ class AutoTorrent(object):
                     files_sorted['/'.join(orig_path)] = i
                     i += 1
             
-            if self.db.scene_mode:
-                scene_paths = set()
+            if self.db.unsplitable_mode:
+                unsplitable_paths = set()
                 for path, files in path_files.items():
-                    if is_scene_modeable(f['path'][-1] for f in files):
+                    if is_unsplitable(f['path'][-1] for f in files):
                         path = path.split(os.sep)
-                        name = get_actual_scene_name(path)
+                        name = get_root_of_unsplitable(path)
                         if not name:
                             continue
                         
                         while path[-1] != name:
                             path.pop()
-                        scene_paths.add(os.path.join(*path))
+                        unsplitable_paths.add(os.path.join(*path))
             
             for path, files in path_files.items():
-                if self.db.scene_mode:
+                if self.db.unsplitable_mode:
                     path = path.split(os.sep)
-                    while path and os.path.join(*path) not in scene_paths:
+                    while path and os.path.join(*path) not in unsplitable_paths:
                         path.pop()
                 else:
                     path = None
@@ -121,7 +185,7 @@ class AutoTorrent(object):
                 if path:
                     name = path[-1]
                     for f in files:
-                        actual_path = self.db.find_scene_file_path(name, f['path'][-1], f['length'])
+                        actual_path = self.db.find_unsplitable_file_path(name, f['path'], f['length'])
                         f['actual_path'] = actual_path
                         f['completed'] = actual_path is not None
                     result += files
@@ -135,17 +199,16 @@ class AutoTorrent(object):
             result = sorted(result, key=lambda x:files_sorted['/'.join(x['path'])])
             
         else: # singlefile torrent
-            path = torrent[b'info'][b'name'].decode('utf-8')
             length = torrent[b'info'][b'length']
-            actual_path = self.db.find_file_path(path, length)
+            actual_path = self.db.find_file_path(torrent_name, length)
             
             result.append({
                 'actual_path': actual_path,
                 'length': length,
-                'path': [path],
+                'path': [torrent_name],
                 'completed': actual_path is not None,
             })
-        return result
+        return {'mode': 'link', 'files': result}
 
     def parse_torrent(self, torrent):
         """
@@ -155,7 +218,7 @@ class AutoTorrent(object):
         files = self.index_torrent(torrent)
 
         found_size, missing_size = 0, 0
-        for f in files:
+        for f in files['files']:
             if f['completed']:
                 found_size += f['length']
             else:
@@ -213,20 +276,25 @@ class AutoTorrent(object):
             self.print_status(Status.MISSING_FILES, path, 'Missing files, only %3.2f%% found (%s missing)' % (found_percent, humanize_bytes(missing_size)))
             return Status.MISSING_FILES
 
-        destination_path = os.path.join(self.store_path, os.path.splitext(os.path.split(path)[1])[0])
-        
-        if os.path.isdir(destination_path):
-            logger.info('Folder exist but torrent is not seeded %s' % destination_path)
-            self.print_status(Status.FOLDER_EXIST_NOT_SEEDING, path, 'The folder exist, but is not seeded by torrentclient')
-            return Status.FOLDER_EXIST_NOT_SEEDING
-
-        self.link_files(destination_path, files)
+        if files['mode'] == 'link':
+            logger.info('Preparing torrent using link mode')
+            destination_path = os.path.join(self.store_path, os.path.splitext(os.path.basename(path))[0])
+            
+            if os.path.isdir(destination_path):
+                logger.info('Folder exist but torrent is not seeded %s' % destination_path)
+                self.print_status(Status.FOLDER_EXIST_NOT_SEEDING, path, 'The folder exist, but is not seeded by torrentclient')
+                return Status.FOLDER_EXIST_NOT_SEEDING
+    
+            self.link_files(destination_path, files['files'])
+        elif files['mode'] == 'exact':
+            logger.info('Preparing torrent using exact mode')
+            destination_path = files['source_path']
 
         if self.delete_torrents:
             logger.info('Removing torrent %r' % path)
             os.remove(path)
         
-        if self.client.add_torrent(torrent, destination_path, files):
+        if self.client.add_torrent(torrent, destination_path, files['files']):
             self.print_status(Status.OK, path, 'Torrent added successfully')
             return Status.OK
         else:
