@@ -1,4 +1,4 @@
-Version 1.5.0 ()
+Version 1.5.0 (08-03-2015)
 ===========================================================
 
 *   Feature: Added a new mode called "exact" where items
