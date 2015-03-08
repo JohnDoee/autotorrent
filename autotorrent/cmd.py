@@ -69,6 +69,9 @@ def commandline_handler():
         client = DelugeClient(host, int(port),
                               config.get('client', 'username'),
                               config.get('client', 'password'))
+    elif client_name == 'transmission':
+        from autotorrent.clients.transmission import TransmissionClient
+        client = TransmissionClient(config.get('client', 'url'))
     else:
         print('Unknown client %r' % client_name)
         quit(1)

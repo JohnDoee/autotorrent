@@ -2,11 +2,8 @@ from __future__ import division
 
 import base64
 import hashlib
-import json
 import logging
 import os
-
-from six.moves import urllib
 
 from deluge_client import DelugeRPCClient
 
@@ -41,7 +38,7 @@ class DelugeClient(object):
     
     def test_connection(self):
         """
-        Tests the Deluge JSON API connection, returns message if found.
+        Tests the Deluge RPC connection, returns message if found.
         """
         self._login()
         return 'Free space: %s' % humanize_bytes(self.rpcclient.call('core.get_free_space'))

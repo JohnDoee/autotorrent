@@ -12,8 +12,6 @@ from ..at import AutoTorrent, Status
 from ..bencode import bdecode, bencode
 from ..db import Database
 
-from pprint import pprint
-
 def create_file(temp_folder, path, size):
     path = os.path.join(temp_folder, *path)
     dirname = os.path.dirname(path)
