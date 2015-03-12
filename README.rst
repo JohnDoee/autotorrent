@@ -19,17 +19,35 @@ Requirements
 Install
 -------
 
+From PyPi (stable):
+::
+
+    virtualenv autotorrent-env
+    autotorrent-env/bin/pip install autotorrent
+
 From GitHub (develop):
 ::
 
     virtualenv autotorrent-env
     autotorrent-env/bin/pip install git+https://github.com/JohnDoee/autotorrent.git#develop
 
-From PyPi (stable):
+Get the configuration file
 ::
 
-    virtualenv autotorrent-env
-    autotorrent-env/bin/pip install autotorrent
+    wget -Oautotorrent.conf https://github.com/JohnDoee/autotorrent/raw/develop/autotorrent.conf.example
+
+Upgrade from previous version
+-----------------------------
+
+Upgrading from PyPi (stable)
+::
+
+    autotorrent-env/bin/pip install --upgrade autotorrent
+
+Upgrading from Github (develop)
+::
+
+    autotorrent-env/bin/pip install git+https://github.com/JohnDoee/autotorrent.git#develop --upgrade --force-reinstall
 
 Configuration
 -------------
@@ -68,7 +86,10 @@ rtorrent settings
    rutorrent only)
 
 the url supports both SCGI directly and XMLRPC via HTTP.
+
 To use scgi, prefix the url with scgi instead of http, e.g. scgi://127.0.0.1:10000/
+
+To use unix socket for scgi, make an url with no ip:port and instead a path, e.g. scgi:///tmp/rtorrent.socket
 
 deluge settings
 ***************

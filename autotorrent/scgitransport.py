@@ -31,12 +31,19 @@ def encode_header(key, value):
     return key + b'\x00' + value + b'\x00'
 
 class SCGITransport(Transport):
+    def __init__(self, *args, **kwargs):
+        self.socket_path = kwargs.pop('socket_path', '')
+        Transport.__init__(self, *args, **kwargs)
+    
     def single_request(self, host, handler, request_body, verbose=False):
         self.verbose = verbose
-        host, port = host.split(':')
-
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((host, int(port)))
+        if self.socket_path:
+            s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            s.connect(self.socket_path)
+        else:
+            host, port = host.split(':')
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect((host, int(port)))
 
         request = encode_header(b'CONTENT_LENGTH', str(len(request_body)).encode())
         request += encode_header(b'SCGI', b'1')
