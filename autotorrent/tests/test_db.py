@@ -51,6 +51,10 @@ class TestDatabase(TestCase):
         if self._temp_path.startswith('/tmp'): # paranoid-mon, the best pokemon.
             shutil.rmtree(self._temp_path)
     
+    def test_keyify_utf8(self):
+        key = 'test \xef\xbc\x9a'
+        self.db.keyify(0, key)
+    
     def test_initial_build(self):
         for p, size in self._fs:
             result = self.db.find_file_path(p[-1], size)
