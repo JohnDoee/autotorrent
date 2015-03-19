@@ -74,9 +74,9 @@ class TestRTorrentClient(TestCase):
         resume_data = torrent[b'libtorrent_resume']
         
         self.assertEqual(resume_data[b'files'], [
-            {b'priority': 0, b'completed': 1, b'mtime': 1000},
-            {b'priority': 0, b'completed': 1, b'mtime': 1000},
-            {b'priority': 0, b'completed': 1, b'mtime': 1000}
+            {b'priority': 1, b'completed': 1, b'mtime': 1000},
+            {b'priority': 1, b'completed': 1, b'mtime': 1000},
+            {b'priority': 1, b'completed': 1, b'mtime': 1000}
         ])
         
         bitfield = resume_data[b'bitfield']
@@ -90,9 +90,9 @@ class TestRTorrentClient(TestCase):
         resume_data = torrent[b'libtorrent_resume']
         
         self.assertEqual(resume_data[b'files'], [
-            {b'priority': 0, b'completed': 1, b'mtime': 1000},
-            {b'priority': 0, b'completed': 0},
-            {b'priority': 0, b'completed': 1, b'mtime': 1000}
+            {b'priority': 1, b'completed': 1, b'mtime': 1000},
+            {b'priority': 1, b'completed': 0},
+            {b'priority': 1, b'completed': 1, b'mtime': 1000}
         ])
         
         bitfield = resume_data[b'bitfield']
