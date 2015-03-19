@@ -70,17 +70,21 @@ class Database(object):
     
             self.db[key] = path
     
-    def rebuild(self):
+    def rebuild(self, paths=None):
         """
         Scans the paths for files and rebuilds the database.
         """
-        logger.info('Rebuilding database')
-        self.truncate()
+        if paths:
+            logger.info('Just adding new paths')
+        else:
+            logger.info('Rebuilding database')
+            self.truncate()
+            paths = self.paths
         
         unsplitable_paths = set()
         if self.unsplitable_mode or self.exact_mode:
             logger.info('Special modes enabled, doing a preliminary scan')
-            for root_path in self.paths:
+            for root_path in paths:
                 logger.info('Preliminary scanning %s' % root_path)
                 for root, dirs, files in os.walk(root_path):
                     if is_unsplitable(files):
@@ -93,7 +97,7 @@ class Database(object):
                         unsplitable_paths.add(path)
                 logger.info('Done preliminary scanning %s' % root_path)
         
-        for root_path in self.paths:
+        for root_path in paths:
             logger.info('Scanning %s' % root_path)
             for root, dirs, files in os.walk(root_path):
                 unsplitable = False

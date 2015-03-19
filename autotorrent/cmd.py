@@ -12,7 +12,7 @@ def commandline_handler():
     parser.add_argument("-c", "--config", dest="config_file", default="autotorrent.conf", help="Path to config file")
     
     parser.add_argument("-t", "--test_connection", action="store_true", dest="test_connection", default=False, help='Tests the connection to the torrent client')
-    parser.add_argument("-r", "--rebuild", action="store_true", dest="rebuild", default=False, help='Rebuild the database')
+    parser.add_argument("-r", "--rebuild", dest="rebuild", default=False, help='Rebuild the database', nargs='*')
     parser.add_argument("-a", "--addfile", dest="addfile", default=False, help='Add a new torrent file to client', nargs='+')
     parser.add_argument("-d", "--delete_torrents", action="store_true", dest="delete_torrents", default=False, help='Delete torrents when they are added to the client')
     parser.add_argument("--verbose", help="increase output verbosity", action="store_true", dest="verbose")
@@ -92,10 +92,15 @@ def commandline_handler():
             print('Connected to torrent client successfully!')
             print('  result: %s' % proxy_test_result)
     
-    if args.rebuild:
-        print('Rebuilding database')
-        db.rebuild()
-        print('Database rebuilt')
+    if isinstance(args.rebuild, list):
+        if args.rebuild:
+            print('Adding new folders to database')
+            db.rebuild(args.rebuild)
+            print('Added to database')
+        else:
+            print('Rebuilding database')
+            db.rebuild()
+            print('Database rebuilt')
 
     if args.addfile:
         print('Found %s torrent(s)' % len(args.addfile))
