@@ -5,7 +5,7 @@ import logging
 import os
 import uuid
 
-from six.moves.urllib.parse import quote
+from six.moves.urllib.parse import quote, urlsplit
 from six.moves.xmlrpc_client import ServerProxy
 
 from ..bencode import bencode
@@ -14,11 +14,17 @@ from ..scgitransport import SCGITransport
 logger = logging.getLogger(__name__)
 
 def create_proxy(url):
+    parsed = urlsplit(url)
     proto = url.split(':')[0].lower()
     if proto == 'scgi':
-        url = ':'.join(['http'] + url.split(':')[1:])
-        logger.debug('Creating SCGI XMLRPC Proxy with url %r' % url)
-        return ServerProxy(url, transport=SCGITransport())
+        if parsed.netloc:
+            url = 'http://%s' % parsed.netloc
+            logger.debug('Creating SCGI XMLRPC Proxy with url %r' % url)
+            return ServerProxy(url, transport=SCGITransport())
+        else:
+            path = parsed.path
+            logger.debug('Creating SCGI XMLRPC Socket Proxy with socket file %r' % path)
+            return ServerProxy('http://1', transport=SCGITransport(socket_path=path))
     else:
         logger.debug('Creating Normal XMLRPC Proxy with url %r' % url)
         return ServerProxy(url)
@@ -89,7 +95,7 @@ class RTorrentClient(object):
             for f in files:
                 logger.debug('Handling file %r' % f)
                 
-                result = {b'priority': 0, b'completed': int(f['completed'])}
+                result = {b'priority': 1, b'completed': int(f['completed'])}
                 if f['completed']:
                     result[b'mtime'] = self._get_mtime(os.path.join(destination_path, *f['path']))
                 torrent[b'libtorrent_resume'][b'files'].append(result)

@@ -31,6 +31,15 @@ class Database(object):
     
     def insert_into_database(self, root, f, mode, prefix=None, unsplitable_name=None):
         """
+        Wraps the database insert to catch exceptions
+        """
+        try:
+            self._insert_into_database(root, f, mode, prefix, unsplitable_name)
+        except UnicodeDecodeError:
+            logger.error('Failed to insert %r / %r / %r' % (root, f, mode))
+
+    def _insert_into_database(self, root, f, mode, prefix=None, unsplitable_name=None):
+        """
         Does the actual insertion into the database.
         """
         path = os.path.abspath(os.path.join(root, f))
