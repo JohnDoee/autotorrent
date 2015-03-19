@@ -1,3 +1,9 @@
+Version 1.5.2 ()
+===========================================================
+
+*   Bugfix: Fixed typo in a previous utf-8 bugfix
+*   Bugfix: Fixed small priority bug with rtorrent.
+
 Version 1.5.1 (08-03-2015)
 ===========================================================
 

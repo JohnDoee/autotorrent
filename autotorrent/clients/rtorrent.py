@@ -95,7 +95,7 @@ class RTorrentClient(object):
             for f in files:
                 logger.debug('Handling file %r' % f)
                 
-                result = {b'priority': 0, b'completed': int(f['completed'])}
+                result = {b'priority': 1, b'completed': int(f['completed'])}
                 if f['completed']:
                     result[b'mtime'] = self._get_mtime(os.path.join(destination_path, *f['path']))
                 torrent[b'libtorrent_resume'][b'files'].append(result)
