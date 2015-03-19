@@ -1,4 +1,4 @@
-Version 1.5.2 ()
+Version 1.5.2 (19-03-2015)
 ===========================================================
 
 *   Bugfix: Fixed typo in a previous utf-8 bugfix
