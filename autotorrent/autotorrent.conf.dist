@@ -1,6 +1,6 @@
 [general]
 db=_autotorrent.db
-ignore_files=shittyfile
+ignore_files=
 store_path=/home/rtorrent/myseeds/
 add_limit_size=64000000
 add_limit_percent=1
