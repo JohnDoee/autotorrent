@@ -2,6 +2,8 @@ Version 1.5.3 ()
 ===========================================================
 
 *   Feature: Added support for scanning a single path
+*   Feature: Added commandline option to create base configuration
+    file.
 
 Version 1.5.2 (19-03-2015)
 ===========================================================

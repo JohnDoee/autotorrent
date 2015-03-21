@@ -23,6 +23,7 @@ setup(
     packages=['autotorrent', 'autotorrent.clients'],
     install_requires=['six', 'deluge-client', 'requests'],
     license='MIT',
+    package_data={'autotorrent': ['autotorrent.conf.dist']},
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Console',
