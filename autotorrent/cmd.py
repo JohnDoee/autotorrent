@@ -11,7 +11,7 @@ from autotorrent.db import Database
 def commandline_handler():
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config", dest="config_file", default="autotorrent.conf", help="Path to config file")
-    parser.add_argument("--create_config", dest="create_config_file", default="autotorrent.conf", help="Creates a new configuration file")
+    parser.add_argument("--create_config", dest="create_config_file", nargs='?', const='autotorrent.conf', default=None, help="Creates a new configuration file")
     
     parser.add_argument("-t", "--test_connection", action="store_true", dest="test_connection", default=False, help='Tests the connection to the torrent client')
     parser.add_argument("-r", "--rebuild", dest="rebuild", default=False, help='Rebuild the database', nargs='*')
@@ -23,7 +23,7 @@ def commandline_handler():
     
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.ERROR)
     
-    if args.create_config_file:
+    if args.create_config_file: # autotorrent.conf
         if os.path.exists(args.create_config_file):
             parser.error("Target %r already exists, not creating" % args.create_config_file)
         else:
