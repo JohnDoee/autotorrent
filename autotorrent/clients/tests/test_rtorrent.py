@@ -42,6 +42,7 @@ class MockXMLRPCProxy(object):
 class TestRTorrentClient(TestCase):
     def setUp(self):
         self.client = RTorrentClient('http://127.0.0.1:5000', 'autotorrent')
+        self.client.sleep_time = 0
         self.client.proxy = MockXMLRPCProxy()
         self.client._get_mtime = lambda x: 1000
     
