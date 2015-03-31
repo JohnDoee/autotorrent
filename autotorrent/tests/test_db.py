@@ -76,6 +76,21 @@ class TestDatabase(TestCase):
         
         self.test_initial_build()
     
+    def test_rebuild_specific_path(self):
+        fs = [
+            (['2', 'e'], 16),
+            (['2', 'f'], 15),
+        ]
+        for p, size in fs:
+            create_file(self._temp_path, p, size)
+        
+        self._fs.pop()
+        self._fs += fs
+        
+        self.db.rebuild([self._temp_path])
+        
+        self.test_initial_build()
+    
     def test_ignore_file(self):
         self.db.ignore_files = ['a*']
         self.db.rebuild()
