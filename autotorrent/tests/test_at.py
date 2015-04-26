@@ -27,6 +27,10 @@ class DummyDatabase(Database):
         self.normal_mode = True
         self.unsplitable_mode = True
         self.exact_mode = True
+        self.hash_name_mode = False
+        self.hash_size_mode = False
+        self.hash_slow_mode = False
+        self.hash_mode = False
     
     def truncate(self):
         pass
@@ -71,7 +75,7 @@ class TestAutoTorrent(TestCase):
         self.dst = os.path.join(self._temp_path, 'dst')
         os.makedirs(self.dst)
         
-        dirname = os.path.join(os.path.dirname(__file__), 'testfiles')
+        self.dirname = dirname = os.path.join(os.path.dirname(__file__), 'testfiles')
         self.db = DummyDatabase()
         self.client = DummyClient()
         
@@ -107,7 +111,15 @@ class TestAutoTorrent(TestCase):
             shutil.copytree(src, dst)
             shutil.copy(src + '.torrent', dst + '.torrent')
             paths.add(os.path.dirname(dst))
-        self.actual_db = Database(os.path.join(self._temp_path, 'db.db'), list(paths), '', True, True, False)
+        
+        shutil.copytree(os.path.join(dirname, 'hashalignment'),
+                        os.path.join(self.src, 'hashalignment'))
+        shutil.copy(os.path.join(dirname, 'hashalignment_multifile.torrent'),
+                    os.path.join(self.src, 'hashalignment_multifile.torrent'))
+        shutil.copy(os.path.join(dirname, 'hashalignment_singlefile.torrent'),
+                    os.path.join(self.src, 'hashalignment_singlefile.torrent'))
+        
+        self.actual_db = Database(os.path.join(self._temp_path, 'db.db'), list(paths), '', True, True, False, False, False, False)
 
     def tearDown(self):
         if self._temp_path.startswith('/tmp'): # paranoid-mon, the best pokemon.
@@ -564,3 +576,337 @@ class TestAutoTorrent(TestCase):
         
         self.assertEqual(listing, expected_listing)
         self.assertEqual(result['mode'], 'exact')
+    
+    def test_index_hash_name(self):
+        self.actual_db.unsplitable_mode = False
+        self.actual_db.normal_mode = False
+        
+        self.actual_db.hash_mode = True
+        self.actual_db.hash_name_mode = True
+        self.actual_db.rebuild()
+        self.at.db = self.actual_db
+        
+        result = self.at.index_torrent(self.torrent)
+        listing = result['files']
+        for item in listing:
+            if item.get('actual_path'):
+                item['actual_path'] = item['actual_path'][len(self._temp_path):].lstrip('/')
+        
+        expected_listing = [{u'actual_path': u'src/file_a.txt',
+            u'completed': True,
+            u'length': 11,
+            u'path': [u'file_a.txt']},
+           {u'actual_path': None, # can't find the whole file here
+            u'completed': False,
+            u'length': 11,
+            u'path': [u'file_b.txt']},
+           {u'actual_path': u'src/file_c.txt',
+            u'completed': True,
+            u'length': 11,
+            u'path': [u'file_c.txt']}]
+        
+        self.assertEqual(listing, expected_listing)
+    
+    def _align_setup(self):
+        self.actual_db.unsplitable_mode = False
+        self.actual_db.normal_mode = False
+        
+        self.actual_db.hash_mode = True
+        self.actual_db.hash_name_mode = True
+        self.actual_db.hash_size_mode = True
+        
+        self.actual_db.rebuild()
+        self.at.db = self.actual_db
+        
+        with open(os.path.join(self.src, 'hashalignment_multifile.torrent'), 'rb') as f:
+            multi_torrent = bdecode(f.read())
+        
+        with open(os.path.join(self.src, 'hashalignment_singlefile.torrent'), 'rb') as f:
+            single_torrent = bdecode(f.read())
+        
+        return single_torrent, multi_torrent
+    
+    def test_align_singlefile(self):
+        src = os.path.join(self.src, 'hashalignment', 'file_a')
+        dst = os.path.join(self.src, 'hashalignment', 'randomname')
+        os.rename(src, dst)
+        
+        single_torrent, multi_torrent = self._align_setup()
+        
+        result = self.at.index_torrent(multi_torrent)
+        listing = result['files']
+        for item in listing:
+            if item.get('actual_path'):
+                item['actual_path'] = item['actual_path'][len(self._temp_path):].lstrip('/')
+        
+        expected_listing = [{u'actual_path': u'src/hashalignment/randomname',
+            u'completed': True,
+            u'length': 20480,
+            u'path': [u'file_a']},
+           {u'actual_path': u'src/hashalignment/file_b',
+            u'completed': True,
+            u'length': 22528,
+            u'path': [u'file_b']}]
+
+        self.assertEqual(listing, expected_listing)
+    
+    def test_align_start_add_data(self):
+        src = os.path.join(self.src, 'hashalignment', 'file_b')
+        with open(src, 'rb') as f:
+            f.seek(23)
+            data = f.read()
+        
+        with open(src, 'wb') as f:
+            f.write(data)
+        
+        single_torrent, multi_torrent = self._align_setup()
+        result = self.at.index_torrent(single_torrent)
+        listing = result['files']
+        for item in listing:
+            if item.get('actual_path'):
+                item['actual_path'] = item['actual_path'][len(self._temp_path):].lstrip('/')
+        
+        expected_listing = [{u'actual_path': u'src/hashalignment/file_b',
+            u'completed': False,
+            u'length': 22528,
+            u'path': [u'file_b'],
+            u'postprocessing': (u'rewrite', u'add', 0)}]
+        
+        self.assertEqual(listing, expected_listing)
+    
+    def test_align_start_remove_data(self):
+        src = os.path.join(self.src, 'hashalignment', 'file_b')
+        with open(src, 'rb') as f:
+            data = f.read()
+        
+        with open(src, 'wb') as f:
+            f.write(b'\x00'*37)
+            f.write(data)
+        
+        single_torrent, multi_torrent = self._align_setup()
+        result = self.at.index_torrent(single_torrent)
+        listing = result['files']
+        for item in listing:
+            if item.get('actual_path'):
+                item['actual_path'] = item['actual_path'][len(self._temp_path):].lstrip('/')
+        
+        expected_listing = [{u'actual_path': u'src/hashalignment/file_b',
+            u'completed': False,
+            u'length': 22528,
+            u'path': [u'file_b'],
+            u'postprocessing': (u'rewrite', u'remove', 0)}]
+        
+        self.assertEqual(listing, expected_listing)
+    
+    def test_align_end_add_data(self):
+        src = os.path.join(self.src, 'hashalignment', 'file_b')
+        new_size = 22528-37
+        with open(src, 'rb') as f:
+            data = f.read(new_size)
+        
+        with open(src, 'wb') as f:
+            f.write(data)
+        
+        single_torrent, multi_torrent = self._align_setup()
+        result = self.at.index_torrent(single_torrent)
+        listing = result['files']
+        for item in listing:
+            if item.get('actual_path'):
+                item['actual_path'] = item['actual_path'][len(self._temp_path):].lstrip('/')
+        
+        expected_listing = [{u'actual_path': u'src/hashalignment/file_b',
+            u'completed': False,
+            u'length': 22528,
+            u'path': [u'file_b'],
+            u'postprocessing': (u'rewrite', u'add', new_size)}]
+        
+        self.assertEqual(listing, expected_listing)
+    
+    def test_align_end_remove_data(self):
+        src = os.path.join(self.src, 'hashalignment', 'file_b')
+        with open(src, 'rb') as f:
+            data = f.read()
+        
+        with open(src, 'wb') as f:
+            f.write(data)
+            f.write(b'\x00'*37)
+        
+        single_torrent, multi_torrent = self._align_setup()
+        result = self.at.index_torrent(single_torrent)
+        listing = result['files']
+        for item in listing:
+            if item.get('actual_path'):
+                item['actual_path'] = item['actual_path'][len(self._temp_path):].lstrip('/')
+        
+        expected_listing = [{u'actual_path': u'src/hashalignment/file_b',
+            u'completed': False,
+            u'length': 22528,
+            u'path': [u'file_b'],
+            u'postprocessing': (u'rewrite', u'remove', 22528)}]
+        
+        self.assertEqual(listing, expected_listing)
+    
+    def test_align_center_add_data(self):
+        src = os.path.join(self.src, 'hashalignment', 'file_b')
+        with open(src, 'rb') as f:
+            data = f.read()
+        
+        with open(src, 'wb') as f:
+            f.write(data[:10028])
+            f.write(data[13029:])
+        
+        single_torrent, multi_torrent = self._align_setup()
+        result = self.at.index_torrent(single_torrent)
+        listing = result['files']
+        for item in listing:
+            if item.get('actual_path'):
+                item['actual_path'] = item['actual_path'][len(self._temp_path):].lstrip('/')
+        
+        expected_listing = [{u'actual_path': u'src/hashalignment/file_b',
+            u'completed': False,
+            u'length': 22528,
+            u'path': [u'file_b'],
+            u'postprocessing': (u'rewrite', u'add', 9984)}]
+        
+        self.assertEqual(listing, expected_listing)
+    
+    def test_align_center_remove_data(self):
+        src = os.path.join(self.src, 'hashalignment', 'file_b')
+        with open(src, 'rb') as f:
+            data = f.read()
+        
+        with open(src, 'wb') as f:
+            f.write(data[:10028])
+            f.write(b'\x00'*51)
+            f.write(data[10028:])
+        
+        single_torrent, multi_torrent = self._align_setup()
+        result = self.at.index_torrent(single_torrent)
+        listing = result['files']
+        for item in listing:
+            if item.get('actual_path'):
+                item['actual_path'] = item['actual_path'][len(self._temp_path):].lstrip('/')
+        
+        expected_listing = [{u'actual_path': u'src/hashalignment/file_b',
+            u'completed': False,
+            u'length': 22528,
+            u'path': [u'file_b'],
+            u'postprocessing': (u'rewrite', u'remove', 9984)}]
+        
+        self.assertEqual(listing, expected_listing)
+    
+    def test_handle_torrentfile_hashcheck(self):
+        src = os.path.join(self.src, 'hashalignment', 'file_a')
+        dst = os.path.join(self.src, 'hashalignment', 'randomname')
+        os.rename(src, dst)
+        
+        single_torrent, multi_torrent = self._align_setup()
+        
+        result = self.at.handle_torrentfile(os.path.join(self.src, 'hashalignment_multifile.torrent'))
+        self.assertEqual(result, Status.OK)
+        
+        self.assertTrue(self._check_at_log(Status.OK))
+    
+    def test_handle_torrentfile_hashcheck_missingfile(self):
+        src = os.path.join(self.src, 'hashalignment', 'file_a')
+        os.remove(src)
+        
+        single_torrent, multi_torrent = self._align_setup()
+        
+        result = self.at.handle_torrentfile(os.path.join(self.src, 'hashalignment_multifile.torrent'))
+        self.assertEqual(result, Status.MISSING_FILES)
+        
+        self.assertTrue(self._check_at_log(Status.MISSING_FILES))
+    
+    def test_handle_torrentfile_hashcheck_realign_multi_file(self):
+        src = os.path.join(self.src, 'hashalignment', 'file_a')
+        dst = os.path.join(self.src, 'hashalignment', 'randomname')
+        os.rename(src, dst)
+        with open(dst, 'rb') as f:
+            data = f.read()
+        
+        with open(dst, 'wb') as f:
+            f.write(data[:10028])
+            f.write(b'\x00'*51)
+            f.write(data[10028:])
+        
+        src = os.path.join(self.src, 'hashalignment', 'file_b')
+        dst = os.path.join(self.src, 'hashalignment', 'othername_WHAT')
+        os.rename(src, dst)
+        with open(dst, 'rb') as f:
+            data = f.read()
+        
+        with open(dst, 'wb') as f:
+            f.write(data[:10028])
+            f.write(data[11029:])
+        
+        self.actual_db.hash_slow_mode = True
+        single_torrent, multi_torrent = self._align_setup()
+        
+        result = self.at.handle_torrentfile(os.path.join(self.src, 'hashalignment_multifile.torrent'))
+        self.assertEqual(result, Status.OK)
+        
+        self.assertTrue(self._check_at_log(Status.OK))
+        
+        dst = os.path.join(self.dst, 'hashalignment_multifile')
+        
+        self.assertTrue(os.path.join(dst, 'file_a'))
+        self.assertTrue(os.path.join(dst, 'file_b'))
+        
+        self.assertTrue(os.path.getsize(os.path.join(dst, 'file_a')), 20480)
+        self.assertTrue(os.path.getsize(os.path.join(dst, 'file_b')), 22528)
+        
+        with open(os.path.join(self.dirname, 'hashalignment', 'file_a'), 'rb') as f:
+            original_file_a = f.read()
+        
+        with open(os.path.join(self.dirname, 'hashalignment', 'file_b'), 'rb') as f:
+            original_file_b = f.read()
+        
+        with open(os.path.join(dst, 'file_a'), 'rb') as f:
+            file_a = f.read()
+        
+        with open(os.path.join(dst, 'file_b'), 'rb') as f:
+            file_b = f.read()
+        
+        self.assertEqual(original_file_a[:100], file_a[:100])
+        self.assertEqual(original_file_b[:100], file_b[:100])
+        self.assertEqual(original_file_a[-100:], file_a[-100:])
+        self.assertEqual(original_file_b[-100:], file_b[-100:])
+    
+    def test_handle_torrentfile_hashcheck_realign_single_file(self):
+        src = os.path.join(self.src, 'hashalignment', 'file_b')
+        dst = os.path.join(self.src, 'hashalignment', 'othername_WHAT')
+        os.rename(src, dst)
+        with open(dst, 'rb') as f:
+            data = f.read()
+        
+        with open(dst, 'wb') as f:
+            f.write(data[:10028])
+            f.write(data[11029:])
+        
+        self.actual_db.hash_slow_mode = True
+        single_torrent, multi_torrent = self._align_setup()
+        
+        result = self.at.handle_torrentfile(os.path.join(self.src, 'hashalignment_singlefile.torrent'))
+        self.assertEqual(result, Status.OK)
+        
+        self.assertTrue(self._check_at_log(Status.OK))
+    
+    def test_handle_torrentfile_hashcheck_realign_single_file_too_different(self):
+        src = os.path.join(self.src, 'hashalignment', 'file_b')
+        dst = os.path.join(self.src, 'hashalignment', 'othername_WHAT')
+        os.rename(src, dst)
+        with open(dst, 'rb') as f:
+            data = f.read()
+        
+        with open(dst, 'wb') as f:
+            f.write(data[:10028])
+            f.write(data[13029:])
+        
+        self.actual_db.hash_slow_mode = True
+        single_torrent, multi_torrent = self._align_setup()
+        
+        result = self.at.handle_torrentfile(os.path.join(self.src, 'hashalignment_singlefile.torrent'))
+        self.assertEqual(result, Status.MISSING_FILES)
+        
+        self.assertTrue(self._check_at_log(Status.MISSING_FILES))
