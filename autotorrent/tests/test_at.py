@@ -59,7 +59,7 @@ class DummyClient(object):
     def get_torrents(self):
         return self.hashes
     
-    def add_torrent(self, torrent, destination_path, files):
+    def add_torrent(self, torrent, destination_path, files, fast_resume=True):
         infohash = hashlib.sha1(bencode(torrent[b'info'])).hexdigest()
         self.hashes.add(infohash)
         self.last_destination_path = destination_path
