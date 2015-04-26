@@ -398,7 +398,7 @@ class AutoTorrent(object):
                             bytes_written += read_bytes
                 logger.debug('Done rewriting file')
     
-    def handle_torrentfile(self, path):
+    def handle_torrentfile(self, path, dry_run=False):
         """
         Checks a torrentfile for files to seed, groups them by found / not found.
         The result will also include the total size of missing / not missing files.
@@ -417,12 +417,16 @@ class AutoTorrent(object):
         found_size, missing_size, files = self.parse_torrent(torrent)
         missing_percent = (missing_size / (found_size + missing_size)) * 100
         found_percent = 100 - missing_percent
+        would_not_add = missing_size and missing_percent > self.add_limit_percent or missing_size > self.add_limit_size
         
-        if missing_size and missing_percent > self.add_limit_percent or missing_size > self.add_limit_size:
+        if dry_run:
+            return found_size, missing_size, would_not_add, [f['actual_path'] for f in files['files'] if f.get('actual_path')]
+        
+        if would_not_add:
             logger.info('Files missing from %s, only %3.2f%% found (%s missing)' % (path, found_percent, humanize_bytes(missing_size)))
             self.print_status(Status.MISSING_FILES, path, 'Missing files, only %3.2f%% found (%s missing)' % (found_percent, humanize_bytes(missing_size)))
             return Status.MISSING_FILES
-
+        
         if files['mode'] == 'link' or files['mode'] == 'hash':
             logger.info('Preparing torrent using link mode')
             destination_path = os.path.join(self.store_path, os.path.splitext(os.path.basename(path))[0])

@@ -910,3 +910,21 @@ class TestAutoTorrent(TestCase):
         self.assertEqual(result, Status.MISSING_FILES)
         
         self.assertTrue(self._check_at_log(Status.MISSING_FILES))
+
+    def test_handle_torrentfile_dryrun(self):
+        for f in self.files:
+            self.db.add_file(f, 11)
+        
+        dry_run_result = self.at.handle_torrentfile(self.torrent_file, dry_run=True)
+        
+        self.assertTrue(os.path.isfile(self.torrent_file))
+        for f in self.files:
+            p = os.path.join(self.dst, 'test', os.path.basename(f)) # file ends up in a subfolder with torrent name.
+            self.assertFalse(os.path.isfile(p))
+        
+        filelist = [f[len(self._temp_path):].lstrip('/') for f in dry_run_result[3]]
+        self.assertEqual(filelist, ['src/file_a.txt', 'src/file_b.txt', 'src/file_c.txt'])
+        self.assertEqual(dry_run_result[0], 33)
+        self.assertEqual(dry_run_result[1], 0)
+        self.assertEqual(dry_run_result[2], False)
+        
