@@ -1,6 +1,10 @@
-Version 1.5.3 ()
+Version 1.6.0 (30-04-2015)
 ===========================================================
 
+*   Feature: Added a new range of scan modes that uses hash
+    instead of just filename or size to figure out the correct file
+*   Feature: Added support for dry-run with both text and
+    json output format
 *   Feature: Added support for scanning a single path
 *   Feature: Added commandline option to create base configuration
     file.
