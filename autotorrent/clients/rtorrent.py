@@ -3,6 +3,7 @@ from __future__ import division
 import hashlib
 import logging
 import os
+import time
 import uuid
 
 from six.moves.urllib.parse import quote, urlsplit
@@ -42,6 +43,8 @@ def bitfield_to_string(bitfield):
     return bytes(retval)
     
 class RTorrentClient(object):
+    sleep_time = 1
+    
     def __init__(self, url, label):
         """
         Initializes a new rtorrent client proxy.
@@ -129,6 +132,17 @@ class RTorrentClient(object):
         
         logger.info('Sending to rtorrent: %r' % cmd)
         self.proxy.load_start(*cmd)
+        
+        successful = False
+        for _ in range(5):
+            if infohash in self.get_torrents():
+                successful = True
+                break
+            
+            time.sleep(self.sleep_time)
+        else:
+            logger.warning('Torrent was not added to rtorrent within reasonable timelimit')
+        
         os.remove(torrent_file)
         
-        return infohash in self.get_torrents()
+        return successful

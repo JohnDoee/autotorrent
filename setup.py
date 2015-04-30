@@ -13,7 +13,7 @@ def read_description():
 
 setup(
     name='autotorrent',
-    version='1.5.2',
+    version='1.6.0',
     description='AutoTorrent allows easy cross-seeding',
     long_description=read_description(),
     author='Anders Jensen',
@@ -23,6 +23,7 @@ setup(
     packages=['autotorrent', 'autotorrent.clients'],
     install_requires=['six', 'deluge-client', 'requests'],
     license='MIT',
+    package_data={'autotorrent': ['autotorrent.conf.dist']},
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Console',

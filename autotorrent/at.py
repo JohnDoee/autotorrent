@@ -8,7 +8,7 @@ from collections import defaultdict
 
 from .bencode import bencode, bdecode
 from .humanize import humanize_bytes
-from .utils import is_unsplitable, get_root_of_unsplitable
+from .utils import is_unsplitable, get_root_of_unsplitable, Pieces
 
 logger = logging.getLogger('autotorrent')
 
@@ -44,6 +44,8 @@ status_messages = {
   Status.FAILED_TO_ADD_TO_CLIENT: '%sFailed%s' % (COLOR_FAILED_TO_ADD_TO_CLIENT, Color.ENDC),
 }
 
+CHUNK_SIZE = 65536
+
 class UnknownLinkTypeException(Exception):
     pass
 
@@ -78,6 +80,86 @@ class AutoTorrent(object):
         Creates the info hash of a torrent
         """
         return hashlib.sha1(bencode(torrent[b'info'])).hexdigest()
+
+    def find_hash_checks(self, torrent, result):
+        """
+        Uses hash checking to find pieces
+        """
+        modified_result = False
+        pieces = Pieces(torrent)
+        
+        if self.db.hash_slow_mode:
+            logger.info('Slow mode enabled, building hash size table')
+            self.db.build_hash_size_table()
+        
+        start_size = 0
+        end_size = 0
+        logger.info('Hash scan mode enabled, checking for incomplete files')
+        for f in result:
+            start_size = end_size
+            end_size += f['length']
+            
+            if f['completed']:
+                continue
+            
+            files_to_check = []
+            logger.debug('Building list of file names to match hash with.')
+            
+            if self.db.hash_size_mode:
+                logger.debug('Using hash size mode to find files')
+                files_to_check += self.db.find_hash_size(f['length'])
+            
+            if self.db.hash_name_mode:
+                logger.debug('Using hash name mode to find files')
+                name = f['path'][-1]
+                files_to_check += self.db.find_hash_name(name)
+            
+            if self.db.hash_slow_mode:
+                logger.debug('Using hash slow mode to find files')
+                files_to_check += self.db.find_hash_varying_size(f['length'])
+            
+            logger.debug('Found %i files to check for matching hash' % len(files_to_check))
+            
+            checked_files = set()
+            for db_file in files_to_check:
+                if db_file in checked_files:
+                    logger.debug('File %s already checked, skipping' % db_file)
+                
+                checked_files.add(db_file)
+                logger.info('Hash checking %s' % db_file)
+                match_start, match_end = pieces.match_file(db_file, start_size, end_size)
+                logger.info('We go result for file %s start:%s end:%s' % (db_file, match_start, match_end))
+                
+                if match_start or match_end: # this file is all-good
+                    size = os.path.getsize(db_file)
+                    if size != f['length']: # size does not match, need to align file
+                        logger.debug('File does not have correct size, need to align it')
+                        if match_start and match_end:
+                            logger.debug('Need to find alignment in the middle of the file')
+                            modification_point = pieces.find_piece_breakpoint(db_file, start_size, end_size)
+                        elif match_start:
+                            logger.debug('Need to modify from the end of the file')
+                            modification_point = min(f['length'], size)
+                        elif match_end:
+                            logger.debug('Need to modify at the front of the file')
+                            modification_point = 0
+                        
+                        if size > f['length']:
+                            modification_action = 'remove'
+                        else:
+                            modification_action = 'add'
+                        
+                        f['completed'] = False
+                        f['postprocessing'] = ('rewrite', modification_action, modification_point)
+                        modified_result = True
+                    else:
+                        logger.debug('Perfect size, perfect match !')
+                        f['completed'] = True
+                    
+                    f['actual_path'] = db_file
+                    break
+        
+        return modified_result, result
 
     def index_torrent(self, torrent):
         """
@@ -137,6 +219,7 @@ class AutoTorrent(object):
                                     'source_path': path,
                                     'files': result}
         
+        
         result = []
         if b'files' in torrent[b'info']: # multifile torrent
             files_sorted = {}
@@ -146,7 +229,7 @@ class AutoTorrent(object):
                 i = 0
                 path_files = defaultdict(list)
                 for f in torrent[b'info'][b'files']:
-                    orig_path = [x.decode('utf-8') for x in f[b'path']]
+                    orig_path = [x.decode('utf-8') for x in f[b'path'] if x] # remove empty fragments
                     if not self.is_legal_path(orig_path):
                         raise IllegalPathException('That is a dangerous torrent path %r, bailing' % orig_path)
                     
@@ -195,7 +278,7 @@ class AutoTorrent(object):
                         f['actual_path'] = actual_path
                         f['completed'] = actual_path is not None
                     result += files
-            # resort the torrent to fit original ordering
+            # re-sort the torrent to fit original ordering
             result = sorted(result, key=lambda x:files_sorted['/'.join(x['path'])])
             
         else: # singlefile torrent
@@ -208,7 +291,14 @@ class AutoTorrent(object):
                 'path': [torrent_name],
                 'completed': actual_path is not None,
             })
-        return {'mode': 'link', 'files': result}
+        
+        mode = 'link'
+        if self.db.hash_mode:
+            modified_result, result = self.find_hash_checks(torrent, result)
+            if modified_result:
+                mode = 'hash'
+        
+        return {'mode': mode, 'files': result}
 
     def parse_torrent(self, torrent):
         """
@@ -219,7 +309,7 @@ class AutoTorrent(object):
 
         found_size, missing_size = 0, 0
         for f in files['files']:
-            if f['completed']:
+            if f['completed'] or f.get('postprocessing'):
                 found_size += f['length']
             else:
                 missing_size += f['length']
@@ -251,7 +341,64 @@ class AutoTorrent(object):
                 else:
                     raise UnknownLinkTypeException('%r is not a known link type' % self.link_type)
     
-    def handle_torrentfile(self, path):
+    def rewrite_hashed_files(self, destination_path, files):
+        """
+        Rewrites files from the actual_path to the correct file inside destination_path.
+        """
+        if not os.path.isdir(destination_path):
+            os.makedirs(destination_path)
+        
+        for f in files:
+            if not f['completed'] and 'postprocessing' in f:
+                destination = os.path.join(destination_path, *f['path'])
+                
+                file_path = os.path.dirname(destination)
+                if not os.path.isdir(file_path):
+                    logger.debug('Folder %r does not exist, creating' % file_path)
+                    os.makedirs(file_path)
+    
+                logger.debug('Rewriting file from %r to %r' % (f['actual_path'], destination))
+                
+                _, modification_action, modification_point = f['postprocessing']
+                current_size = os.path.getsize(f['actual_path'])
+                expected_size = f['length']
+                diff = abs(current_size - expected_size)
+                
+                # write until modification_point, do action, write rest of file
+                
+                modified = False
+                bytes_written = 0
+                with open(destination, 'wb') as output_fp:
+                    with open(f['actual_path'], 'rb') as input_fp:
+                        logger.debug('Opened file %s and writing its data to %s - The breakpoint is %i' % (f['actual_path'], destination, modification_point))
+                        while True:
+                            if not modified and bytes_written == modification_point:
+                                logger.debug('Time to modify with action %s and bytes %i' % (modification_action, diff))
+                                modified = True
+                                if modification_action == 'remove':
+                                    seek_point = bytes_written + diff
+                                    logger.debug('Have to shrink compared to original file, seeking to %i' % (seek_point, ))
+                                    input_fp.seek(seek_point)
+                                elif modification_action == 'add':
+                                    logger.debug('Need to add data, writing %i empty bytes' % diff)
+                                    while diff > 0:
+                                        write_bytes = min(CHUNK_SIZE, diff)
+                                        output_fp.write(b'\x00' * write_bytes)
+                                        diff -= write_bytes
+                            
+                            read_bytes = CHUNK_SIZE
+                            if not modified:
+                                read_bytes = min(read_bytes, modification_point-bytes_written)
+                            
+                            logger.debug('Reading %i bytes' % (read_bytes, ))
+                            data = input_fp.read(read_bytes)
+                            if not data:
+                                break
+                            output_fp.write(data)
+                            bytes_written += read_bytes
+                logger.debug('Done rewriting file')
+    
+    def handle_torrentfile(self, path, dry_run=False):
         """
         Checks a torrentfile for files to seed, groups them by found / not found.
         The result will also include the total size of missing / not missing files.
@@ -270,13 +417,17 @@ class AutoTorrent(object):
         found_size, missing_size, files = self.parse_torrent(torrent)
         missing_percent = (missing_size / (found_size + missing_size)) * 100
         found_percent = 100 - missing_percent
+        would_not_add = missing_size and missing_percent > self.add_limit_percent or missing_size > self.add_limit_size
         
-        if missing_size and missing_percent > self.add_limit_percent or missing_size > self.add_limit_size:
+        if dry_run:
+            return found_size, missing_size, would_not_add, [f['actual_path'] for f in files['files'] if f.get('actual_path')]
+        
+        if would_not_add:
             logger.info('Files missing from %s, only %3.2f%% found (%s missing)' % (path, found_percent, humanize_bytes(missing_size)))
             self.print_status(Status.MISSING_FILES, path, 'Missing files, only %3.2f%% found (%s missing)' % (found_percent, humanize_bytes(missing_size)))
             return Status.MISSING_FILES
-
-        if files['mode'] == 'link':
+        
+        if files['mode'] == 'link' or files['mode'] == 'hash':
             logger.info('Preparing torrent using link mode')
             destination_path = os.path.join(self.store_path, os.path.splitext(os.path.basename(path))[0])
             
@@ -289,12 +440,18 @@ class AutoTorrent(object):
         elif files['mode'] == 'exact':
             logger.info('Preparing torrent using exact mode')
             destination_path = files['source_path']
+        
+        fast_resume = True
+        if files['mode'] == 'hash':
+            fast_resume = False
+            logger.info('There are files found using hashing that needs rewriting.')
+            self.rewrite_hashed_files(destination_path, files['files'])
 
         if self.delete_torrents:
             logger.info('Removing torrent %r' % path)
             os.remove(path)
         
-        if self.client.add_torrent(torrent, destination_path, files['files']):
+        if self.client.add_torrent(torrent, destination_path, files['files'], fast_resume):
             self.print_status(Status.OK, path, 'Torrent added successfully')
             return Status.OK
         else:

@@ -137,6 +137,28 @@ Mode: unsplitable
 This mode takes scene releases and extracted dvd/bluray isos into consideration and relies on the folder it thinks
 is the main / head folder. Perfect for cross-seeding scene releases.
 
+Mode: hash_name
+~~~~~~~~~~~~~~~
+
+This mode tries to hashcheck files with the exact name as wanted, but the size might be different (up to 10% different).
+If pieces match, then it is resized to fit original size and written to the destination directory.
+
+Make sure there is enough space in the target directory.
+
+Mode: hash_size
+~~~~~~~~~~~~~~~
+
+This mode tries to hashcheck files with the exact size as wanted, but the name might be different.|
+
+Mode: hash_slow
+~~~~~~~~~~~~~~~
+
+This mode tries to hashcheck files with a size within 10% of the original.
+If pieces match, then it is resized to fit original size and written to the destination directory.
+
+Make sure there is enough space in the target directory.
+
+This mode is very slow as it will try a lot of files.
 
 Instructions
 ------------

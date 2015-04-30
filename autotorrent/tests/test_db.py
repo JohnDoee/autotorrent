@@ -44,7 +44,8 @@ class TestDatabase(TestCase):
         
         self.db = Database(os.path.join(self._temp_path, 'autotorrent.db'), [os.path.join(self._temp_path, '1'),
                                                                              os.path.join(self._temp_path, '2'),
-                                                                             os.path.join(self._temp_path, '3')], [], True, True, True)
+                                                                             os.path.join(self._temp_path, '3')], [],
+                           True, True, True, False, False, False)
         self.db.rebuild()
     
     def tearDown(self):
@@ -73,6 +74,21 @@ class TestDatabase(TestCase):
         self._fs += fs
         
         self.db.rebuild()
+        
+        self.test_initial_build()
+    
+    def test_rebuild_specific_path(self):
+        fs = [
+            (['2', 'e'], 16),
+            (['2', 'f'], 15),
+        ]
+        for p, size in fs:
+            create_file(self._temp_path, p, size)
+        
+        self._fs.pop()
+        self._fs += fs
+        
+        self.db.rebuild([self._temp_path])
         
         self.test_initial_build()
     
@@ -157,3 +173,37 @@ class TestDatabase(TestCase):
     
     def test_exact_dvd_release(self):
         self.assertEqual(self.db.find_exact_file_path('d', 'My-DVD'), [os.path.join(self._temp_path, '3', 'My-DVD')])
+    
+    def test_hash_rebuild(self):
+        self.db.hash_name_mode = True
+        self.db.hash_size_mode = True
+        self.db.hash_slow_mode = True
+        self.db.hash_mode = True
+        
+        self.db.hash_mode_size_varying = 20.0
+        self.db.rebuild()
+        self.db.build_hash_size_table()
+        
+        self.assertEqual(self.db.find_hash_name('some-rls.mkv'), [])
+        
+        self.assertEqual(self.db.find_hash_name('a'),
+                         [os.path.join(self._temp_path, '1', 'a'),
+                          os.path.join(self._temp_path, '1', 'f', 'a')])
+        
+        self.assertEqual(self.db.find_hash_size(12),
+                         [os.path.join(self._temp_path, '1', 'f', 'a'),
+                          os.path.join(self._temp_path, '2', 'd')])
+        
+        self.assertEqual(self.db.find_hash_varying_size(12),
+                         [os.path.join(self._temp_path, '1', 'f', 'a'),
+                          os.path.join(self._temp_path, '2', 'd'),
+                          os.path.join(self._temp_path, '1', 'a')])
+        
+        self.db.unsplitable_mode = False
+        self.db.rebuild()
+        self.db.clear_hash_size_table()
+        self.db.build_hash_size_table()
+        
+        self.assertEqual(self.db.find_hash_name('some-rls.mkv'),
+                         [os.path.join(self._temp_path, '3', 'Some-Release', 'Sample', 'some-rls.mkv'),
+                          os.path.join(self._temp_path, '3', 'Some-CD-Release', 'Sample', 'some-rls.mkv')])
