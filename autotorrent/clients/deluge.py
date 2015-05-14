@@ -50,7 +50,7 @@ class DelugeClient(object):
         logger.info('Getting a list of torrent hashes')
         self._login()
         result = self.rpcclient.call('core.get_torrents_status', {}, ['name'])
-        return set(x.lower() for x in result.keys())
+        return set(x.lower().decode('ascii') for x in result.keys())
     
     def add_torrent(self, torrent, destination_path, files, fast_resume=True):
         """
@@ -76,6 +76,7 @@ class DelugeClient(object):
         self._login()
         result = self.rpcclient.call('core.add_torrent_file', 'torrent.torrent', encoded_torrent, {
                                                                 'download_location': os.path.dirname(destination_path),
-                                                                'mapped_files': mapped_files})
+                                                                'mapped_files': mapped_files,
+                                                                'seed_mode': fast_resume})
         
         return result and result.decode('utf-8') == infohash
