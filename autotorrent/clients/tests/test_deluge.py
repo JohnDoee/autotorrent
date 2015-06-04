@@ -66,6 +66,7 @@ class TestDelugeClient(TestCase):
         self.assertTrue(self._add_torrent_with_links(['a', 'b', 'c']))
         torrent = self.client.rpcclient.torrents['2ce6b00e106f26a7c56dbd2c52290e4b6dea10c0']
         self.assertEqual(torrent, {'download_location': '/',
+                                   'seed_mode': True,
                                    'mapped_files': {0: 'tmp/tmp/file_a.txt',
                                                     1: 'tmp/tmp/file_b.txt',
                                                     2: 'tmp/tmp/file_c.txt'}})
