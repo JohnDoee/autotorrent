@@ -207,3 +207,11 @@ class TestDatabase(TestCase):
         self.assertEqual(self.db.find_hash_name('some-rls.mkv'),
                          [os.path.join(self._temp_path, '3', 'Some-Release', 'Sample', 'some-rls.mkv'),
                           os.path.join(self._temp_path, '3', 'Some-CD-Release', 'Sample', 'some-rls.mkv')])
+
+    def test_inaccessible_file(self):
+        inaccessible_path = os.path.join(self._temp_path, '1', 'a')
+        os.chmod(inaccessible_path, 0000)
+        with self.assertLogs('autotorrent.db', level='INFO') as cm:
+            self.db.rebuild()
+        
+        self.assertIn("WARNING:autotorrent.db:Path %r is not accessible, skipping" % inaccessible_path, cm.output)
