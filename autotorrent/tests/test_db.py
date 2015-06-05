@@ -1,10 +1,12 @@
 from __future__ import unicode_literals
 
+import logging
 import os
 import shutil
 import tempfile
 
 from io import open
+from logging.handlers import BufferingHandler
 from unittest import TestCase
 
 from ..db import Database
@@ -17,6 +19,16 @@ def create_file(temp_folder, path, size):
     
     with open(path, 'w') as f:
         f.write(u'x' * size)
+
+class TestHandler(BufferingHandler):
+    def __init__(self):
+        BufferingHandler.__init__(self, 0)
+
+    def shouldFlush(self):
+        return False
+
+    def emit(self, record):
+        self.buffer.append(record.msg)
 
 class TestDatabase(TestCase):
     def setUp(self):
@@ -209,9 +221,15 @@ class TestDatabase(TestCase):
                           os.path.join(self._temp_path, '3', 'Some-CD-Release', 'Sample', 'some-rls.mkv')])
 
     def test_inaccessible_file(self):
+        h = TestHandler()
+        l = logging.getLogger('autotorrent.db')
+        l.addHandler(h)
+        
         inaccessible_path = os.path.join(self._temp_path, '1', 'a')
         os.chmod(inaccessible_path, 0000)
-        with self.assertLogs('autotorrent.db', level='INFO') as cm:
-            self.db.rebuild()
+        self.db.rebuild()
         
-        self.assertIn("WARNING:autotorrent.db:Path %r is not accessible, skipping" % inaccessible_path, cm.output)
+        self.assertIn("Path %r is not accessible, skipping" % inaccessible_path, h.buffer)
+        
+        l.removeHandler(h)
+        h.close()
