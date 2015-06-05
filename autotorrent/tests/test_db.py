@@ -229,7 +229,7 @@ class TestDatabase(TestCase):
         os.chmod(inaccessible_path, 0000)
         self.db.rebuild()
         
-        self.assertIn("Path %r is not accessible, skipping" % inaccessible_path, h.buffer)
+        self.assertTrue("Path %r is not accessible, skipping" % inaccessible_path in h.buffer)
         
         l.removeHandler(h)
         h.close()
