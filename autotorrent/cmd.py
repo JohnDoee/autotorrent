@@ -13,6 +13,7 @@ from autotorrent.humanize import humanize_bytes
 def commandline_handler():
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config", dest="config_file", default="autotorrent.conf", help="Path to config file")
+    parser.add_argument("-l", "--client", dest="client", default="default", help="Name of client to use (when multiple configured)")
     parser.add_argument("--create_config", dest="create_config_file", nargs='?', const='autotorrent.conf', default=None, help="Creates a new configuration file")
     
     parser.add_argument("-t", "--test_connection", action="store_true", dest="test_connection", default=False, help='Tests the connection to the torrent client')
@@ -69,20 +70,29 @@ def commandline_handler():
                   normal_mode, unsplitable_mode, exact_mode,
                   hash_name_mode, hash_size_mode, hash_slow_mode)
     
-    client_name = config.get('client', 'client')
+    client_option = 'client'
+    if args.client != 'default':
+        client_option += '-%s' % args.client
+    
+    try:
+        client_name = config.get(client_option, 'client')
+    except configparser.NoSectionError:
+        print('It seems like %r is not a configured client' % args.client)
+        quit(1)
+    
     if client_name == 'rtorrent':
         from autotorrent.clients.rtorrent import RTorrentClient
-        client = RTorrentClient(config.get('client', 'url'),
-                                config.get('client', 'label'))
+        client = RTorrentClient(config.get(client_option, 'url'),
+                                config.get(client_option, 'label'))
     elif client_name == 'deluge':
         from autotorrent.clients.deluge import DelugeClient
-        host, port = config.get('client', 'host').split(':')
+        host, port = config.get(client_option, 'host').split(':')
         client = DelugeClient(host, int(port),
-                              config.get('client', 'username'),
-                              config.get('client', 'password'))
+                              config.get(client_option, 'username'),
+                              config.get(client_option, 'password'))
     elif client_name == 'transmission':
         from autotorrent.clients.transmission import TransmissionClient
-        client = TransmissionClient(config.get('client', 'url'))
+        client = TransmissionClient(config.get(client_option, 'url'))
     else:
         print('Unknown client %r' % client_name)
         quit(1)
@@ -119,7 +129,9 @@ def commandline_handler():
         dry_run_data = []
         
         print('Found %s torrent(s)' % len(args.addfile))
-        at.populate_torrents_seeded()
+        if not dry_run:
+            at.populate_torrents_seeded()
+        
         for torrent in args.addfile:
             result = at.handle_torrentfile(os.path.join(current_path, torrent), dry_run)
             if dry_run:

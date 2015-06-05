@@ -223,6 +223,11 @@ The releases must also have an sfv in the same folder as the rar files files.
 
 See: http://www.cyberciti.biz/tips/understanding-unixlinux-symbolic-soft-and-hard-links.html
 
+**Q: Can I have multiple clients configured simultaneously?**
+
+Yes, you can name the section e.g. ``client-goodclient`` instead of just ``client`` and then specify you want to use that
+specific client using the commandline argument ``-l goodclient``
+
 License
 -------
 
