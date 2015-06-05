@@ -1,7 +1,9 @@
 Version 1.6.1 ()
 ===========================================================
 
+*   Feature: Now possible to have multiple clients configured
 *   Bugfix: Fixed small bugs with Deluge client
+*   Bugfix: Dry run tried to connect to the client
 
 Version 1.6.0 (30-04-2015)
 ===========================================================
