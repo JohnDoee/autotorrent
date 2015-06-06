@@ -1,8 +1,8 @@
 import base64
 import hashlib
 import os
-
-from io import open
+import shutil
+import tempfile
 
 from unittest import TestCase
 
@@ -35,10 +35,31 @@ class DelugeRPCClient(object):
             else:
                 return None
 
+DELUGE_DEFAULT_CONFIG = """{
+  "file": 1, 
+  "format": 1
+}{
+  "info_sent": 0.0, 
+  "lsd": false, 
+  "send_info": false, 
+  "move_completed_path": "/home/joe/Downloads", 
+  "enc_in_policy": 1, 
+  "queue_new_to_top": false, 
+  "ignore_limits_on_local_network": true, 
+  "rate_limit_ip_overhead": true, 
+  "daemon_port": 55443, 
+  "natpmp": true 
+}"""
+
 class TestDelugeClient(TestCase):
     def setUp(self):
-        self.client = DelugeClient('127.0.0.1', 5000, 'deluge', 'deluge')
+        self.client = DelugeClient('127.0.0.1:5000', 'deluge', 'deluge')
         self.client.rpcclient = DelugeRPCClient()
+        self._temp_path = tempfile.mkdtemp()
+    
+    def tearDown(self):
+        if self._temp_path.startswith('/tmp'): # paranoid-mon, the best pokemon.
+            shutil.rmtree(self._temp_path)
     
     def test_test_connection(self):
         self.assertEqual(self.client.test_connection(), "Free space: 8.8 kB")
@@ -71,3 +92,79 @@ class TestDelugeClient(TestCase):
                                                     1: 'tmp/tmp/file_b.txt',
                                                     2: 'tmp/tmp/file_c.txt'}})
     
+    def test_auto_config_successful_config(self):
+        os.environ['HOME'] = self._temp_path
+        config_path = os.path.join(self._temp_path, '.config/deluge')
+        os.makedirs(config_path)
+        
+        with open(os.path.join(config_path, 'auth'), 'w') as f:
+            f.write('username:password:10\n')
+        
+        with open(os.path.join(config_path, 'core.conf'), 'w') as f:
+            f.write(DELUGE_DEFAULT_CONFIG)
+        
+        dc = DelugeClient.auto_config()
+        self.assertTrue(dc is not None)
+        
+        self.assertEqual(dc.get_config(), {
+            'username': 'username',
+            'password': 'password',
+            'host': '127.0.0.1:55443',
+        })
+    
+    def test_auto_config_problem_files_config(self):
+        os.environ['HOME'] = self._temp_path
+        config_path = os.path.join(self._temp_path, '.config/deluge')
+        os.makedirs(config_path)
+        
+        with open(os.path.join(config_path, 'core.conf'), 'w') as f:
+            f.write(DELUGE_DEFAULT_CONFIG)
+        
+        dc = DelugeClient.auto_config()
+        self.assertTrue(dc is None)
+        
+        with open(os.path.join(config_path, 'auth'), 'w') as f:
+            f.write('username:password:10\n')
+        os.remove(os.path.join(config_path, 'core.conf'))
+        
+        dc = DelugeClient.auto_config()
+        self.assertTrue(dc is None)
+        
+        with open(os.path.join(config_path, 'core.conf'), 'w') as f:
+            f.write(DELUGE_DEFAULT_CONFIG)
+        
+        os.chmod(os.path.join(config_path, 'core.conf'), 000)
+        
+        dc = DelugeClient.auto_config()
+        self.assertTrue(dc is None)
+        
+        os.chmod(os.path.join(config_path, 'core.conf'), 777)
+        os.chmod(os.path.join(config_path, 'auth'), 000)
+        
+        dc = DelugeClient.auto_config()
+        self.assertTrue(dc is None)
+        
+        os.chmod(os.path.join(config_path, 'auth'), 777)
+        
+        dc = DelugeClient.auto_config()
+        self.assertTrue(dc is not None)
+    
+    def test_auto_config_successful_default_config(self):
+        os.environ['HOME'] = self._temp_path
+        config_path = os.path.join(self._temp_path, '.config/deluge')
+        os.makedirs(config_path)
+        
+        with open(os.path.join(config_path, 'auth'), 'w') as f:
+            f.write('username:password:10\n')
+        
+        with open(os.path.join(config_path, 'core.conf'), 'w') as f:
+            f.write(DELUGE_DEFAULT_CONFIG.replace('daemon_port', 'not_daemon_port'))
+        
+        dc = DelugeClient.auto_config()
+        self.assertTrue(dc is not None)
+        
+        self.assertEqual(dc.get_config(), {
+            'username': 'username',
+            'password': 'password',
+            'host': '127.0.0.1:58846',
+        })

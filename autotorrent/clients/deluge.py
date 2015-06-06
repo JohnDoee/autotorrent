@@ -4,9 +4,11 @@ import base64
 import hashlib
 import logging
 import os
+import re
 
 from deluge_client import DelugeRPCClient
 
+from ._base import BaseClient
 from ..bencode import bencode
 from ..humanize import humanize_bytes
 
@@ -15,16 +17,19 @@ logger = logging.getLogger(__name__)
 class UnableToLoginException(Exception):
     pass
     
-class DelugeClient(object):
-    def __init__(self, host, port, username, password):
+class DelugeClient(BaseClient):
+    identifier = 'deluge'
+    
+    def __init__(self, host, username, password):
         """
         Initializes a new Deluge client.
         
         url - The url where deluge json can be reached.
         password - The password used to login
         """
+        host, port = host.split(':')
         self.host = host
-        self.port = port
+        self.port = int(port)
         self.username = username
         self.password = password
         self.rpcclient = DelugeRPCClient(self.host, self.port, self.username, self.password)
@@ -35,6 +40,62 @@ class DelugeClient(object):
         """
         if not self.rpcclient.connected:
             self.rpcclient.connect()
+    
+    def get_config(self):
+        """
+        Get the current configuration that can be used in the autotorrent config file
+        """
+        return {
+            'host': '%s:%s' % (self.host, self.port),
+            'username': self.username,
+            'password': self.password,
+        }
+    
+    @classmethod
+    def auto_config(cls):
+        """
+        Tries to auto configure deluge using the .config/deluge files
+        """
+        config_path = os.path.expanduser('~/.config/deluge/core.conf')
+        if not os.path.isfile(config_path):
+            logger.debug('deluge config file was not found')
+            return
+        
+        if not os.access(config_path, os.R_OK):
+            logger.debug('Unable to access deluge config file at %s' % config_path)
+            return
+        
+        auth_path = os.path.expanduser('~/.config/deluge/auth')
+        if not os.path.isfile(auth_path):
+            logger.debug('deluge auth file was not found')
+            return
+        
+        if not os.access(auth_path, os.R_OK):
+            logger.debug('Unable to access deluge confauthig file at %s' % auth_path)
+            return
+        
+        with open(config_path, 'r') as f:
+            config_data = f.read()
+        
+        daemon_port = re.findall('"daemon_port":\s*(\d+)', config_data)
+        if not daemon_port:
+            logger.debug('No deluge port, just trying to use default')
+            daemon_port = 58846
+        else:
+            daemon_port = int(daemon_port[0])
+        
+        with open(auth_path, 'r') as f:
+            auth_data = f.read()
+        
+        auth_data = auth_data.split('\n')[0].split(':')
+        if len(auth_data[0]) < 2:
+            logger.debug('Invalid entry found in auth file')
+            return
+        
+        username = auth_data[0]
+        password = auth_data[1]
+        
+        return cls('127.0.0.1:%s' % daemon_port, username, password)
     
     def test_connection(self):
         """

@@ -1,7 +1,7 @@
 import hashlib
 import os
-
-from io import open
+import shutil
+import tempfile
 
 from unittest import TestCase
 
@@ -45,6 +45,11 @@ class TestRTorrentClient(TestCase):
         self.client.sleep_time = 0
         self.client.proxy = MockXMLRPCProxy()
         self.client._get_mtime = lambda x: 1000
+        self._temp_path = tempfile.mkdtemp()
+    
+    def tearDown(self):
+        if self._temp_path.startswith('/tmp'): # paranoid-mon, the best pokemon.
+            shutil.rmtree(self._temp_path)
     
     def test_test_connection(self):
         self.assertEqual(self.client.test_connection(), "cwd:'/home/user/rtorrent', pid:10000")
@@ -98,4 +103,60 @@ class TestRTorrentClient(TestCase):
         
         bitfield = resume_data[b'bitfield']
         self.assertEqual(bitfield, b'\x98') # bitfield: 10011 000
+
+    def test_auto_config_successful_config_port(self):
+        os.environ['HOME'] = self._temp_path
+        
+        with open(os.path.join(self._temp_path, '.rtorrent.rc'), 'w') as f:
+            f.write('# bla bla bla\n')
+            f.write('scgi_port = 127.0.0.1:5000\n')
+        
+        rtc = RTorrentClient.auto_config()
+        self.assertTrue(rtc is not None)
+        
+        self.assertEqual(rtc.get_config(), {
+            'url': 'scgi://127.0.0.1:5000',
+            'label': 'autotorrent',
+        })
     
+    def test_auto_config_successful_config_local(self):
+        os.environ['HOME'] = self._temp_path
+        
+        with open(os.path.join(self._temp_path, '.rtorrent.rc'), 'w') as f:
+            f.write('# bla bla bla\n')
+            f.write('scgi_local = ~/.rtorrent/sock.sock\n')
+        
+        rtc = RTorrentClient.auto_config()
+        self.assertTrue(rtc is not None)
+        
+        self.assertEqual(rtc.get_config(), {
+            'url': 'scgi://%s' % (os.path.join(self._temp_path, '.rtorrent/sock.sock')),
+            'label': 'autotorrent',
+        })
+    
+    def test_auto_config_unsuccessful_commented_out(self):
+        os.environ['HOME'] = self._temp_path
+        
+        with open(os.path.join(self._temp_path, '.rtorrent.rc'), 'w') as f:
+            f.write('# bla bla bla\n')
+            f.write('#scgi_local = ~/.rtorrent/sock.sock\n')
+        
+        rtc = RTorrentClient.auto_config()
+        self.assertTrue(rtc is None)
+     
+    def test_auto_config_missing_config(self):
+        os.environ['HOME'] = self._temp_path
+        
+        rtc = RTorrentClient.auto_config()
+        self.assertTrue(rtc is None)
+     
+    def test_auto_config_inaccessible_config(self):
+        os.environ['HOME'] = self._temp_path
+        
+        with open(os.path.join(self._temp_path, '.rtorrent.rc'), 'w') as f:
+            f.write('# bla bla bla\n')
+        
+        os.chmod(os.path.join(self._temp_path, '.rtorrent.rc'), 0000)
+        
+        rtc = RTorrentClient.auto_config()
+        self.assertTrue(rtc is None)

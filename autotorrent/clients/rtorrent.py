@@ -3,12 +3,14 @@ from __future__ import division
 import hashlib
 import logging
 import os
+import re
 import time
 import uuid
 
 from six.moves.urllib.parse import quote, urlsplit
 from six.moves.xmlrpc_client import ServerProxy
 
+from ._base import BaseClient
 from ..bencode import bencode
 from ..scgitransport import SCGITransport
 
@@ -42,7 +44,8 @@ def bitfield_to_string(bitfield):
     
     return bytes(retval)
     
-class RTorrentClient(object):
+class RTorrentClient(BaseClient):
+    identifier = 'rtorrent'
     sleep_time = 1
     
     def __init__(self, url, label):
@@ -52,8 +55,50 @@ class RTorrentClient(object):
         url - The url where rtorrent xmlrpc can be reached. Can be both scgi and http.
         label - The label shown in interfaces like rutorrent.
         """
+        self.url = url
         self.proxy = create_proxy(url)
         self.label = label
+    
+    def get_config(self):
+        """
+        Get the current configuration that can be used in the autotorrent config file
+        """
+        return {
+            'url': self.url,
+            'label': self.label,
+        }
+    
+    @classmethod
+    def auto_config(cls):
+        """
+        Tries to auto configure rtorrent using the .rtorrent.rc config file
+        """
+        config_path = os.path.expanduser('~/.rtorrent.rc')
+        if not os.path.isfile(config_path):
+            logger.debug('rtorrent config file was not found')
+            return
+        
+        if not os.access(config_path, os.R_OK):
+            logger.debug('Unable to access rtorrent config file at %s' % config_path)
+            return
+        
+        with open(config_path, 'r') as f:
+            config_data = f.read()
+        
+        scgi_info = re.findall('^\s*scgi_(port|local)\s*=\s*(.+)\s*$', config_data, re.MULTILINE)
+        if not scgi_info:
+            logger.debug('No scgi info found in configuration file')
+            return
+        scgi_method, scgi_url = scgi_info[0]
+        
+        if scgi_method == 'port':
+            scgi_url = scgi_url.strip()
+        else:
+            scgi_url = os.path.abspath(os.path.expanduser(scgi_url.strip()))
+        
+        scgi_url = 'scgi://%s' % scgi_url
+        logger.debug('Creating auto-detected rtorrent instance with info url:%s' % scgi_url)
+        return cls(scgi_url, 'autotorrent')
     
     def test_connection(self):
         """
