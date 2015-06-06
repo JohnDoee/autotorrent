@@ -12,6 +12,3 @@ disk1=/mnt/sd1/anime/
 disk2=/mnt/sd1/tv/
 
 [client]
-client=rtorrent
-url=http://user:pass@127.0.0.1/RPC2
-label=seeded
