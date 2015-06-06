@@ -216,9 +216,9 @@ class TestDatabase(TestCase):
         self.db.clear_hash_size_table()
         self.db.build_hash_size_table()
         
-        self.assertEqual(self.db.find_hash_name('some-rls.mkv'),
-                         [os.path.join(self._temp_path, '3', 'Some-Release', 'Sample', 'some-rls.mkv'),
-                          os.path.join(self._temp_path, '3', 'Some-CD-Release', 'Sample', 'some-rls.mkv')])
+        self.assertEqual(sorted(self.db.find_hash_name('some-rls.mkv')),
+                         sorted([os.path.join(self._temp_path, '3', 'Some-Release', 'Sample', 'some-rls.mkv'),
+                          os.path.join(self._temp_path, '3', 'Some-CD-Release', 'Sample', 'some-rls.mkv')]))
 
     def test_inaccessible_file(self):
         h = TestHandler()
