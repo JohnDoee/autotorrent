@@ -165,7 +165,9 @@ class AutoTorrent(object):
         """
         Indexes the files in the torrent.
         """
-        torrent_name = torrent[b'info'][b'name'].decode('utf-8')
+        torrent_name = torrent[b'info'][b'name']
+        logger.debug('Handling torrent name %r' % (torrent_name, ))
+        torrent_name = torrent_name.decode('utf-8')
         if not self.is_legal_path([torrent_name]):
             raise IllegalPathException('That is a dangerous torrent name %r, bailing' % torrent_name)
         
@@ -229,6 +231,7 @@ class AutoTorrent(object):
                 i = 0
                 path_files = defaultdict(list)
                 for f in torrent[b'info'][b'files']:
+                    logger.debug('Handling torrent file %r' % (f, ))
                     orig_path = [x.decode('utf-8') for x in f[b'path'] if x] # remove empty fragments
                     if not self.is_legal_path(orig_path):
                         raise IllegalPathException('That is a dangerous torrent path %r, bailing' % orig_path)
