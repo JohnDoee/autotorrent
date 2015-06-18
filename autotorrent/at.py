@@ -63,6 +63,14 @@ class AutoTorrent(object):
         self.link_type = link_type
         self.torrents_seeded = set()
 
+    def try_decode(self, value):
+        try:
+            return value.decode('utf-8')
+        except UnicodeDecodeError:
+            logger.debug('Failed to decode %r using UTF-8' % value)
+        
+        return value.decode('iso-8859-1')
+
     def is_legal_path(self, path):
         for p in path:
             if p in ['.', '..'] or '/' in p:
@@ -167,7 +175,7 @@ class AutoTorrent(object):
         """
         torrent_name = torrent[b'info'][b'name']
         logger.debug('Handling torrent name %r' % (torrent_name, ))
-        torrent_name = torrent_name.decode('utf-8')
+        torrent_name = self.try_decode(torrent_name)
         if not self.is_legal_path([torrent_name]):
             raise IllegalPathException('That is a dangerous torrent name %r, bailing' % torrent_name)
         
@@ -197,7 +205,7 @@ class AutoTorrent(object):
                     else:
                         result = []
                         for f in torrent[b'info'][b'files']:
-                            orig_path = [x.decode('utf-8') for x in f[b'path']]
+                            orig_path = [self.try_decode(x) for x in f[b'path']]
                             p = os.path.join(path, *orig_path)
                             
                             if not os.path.isfile(p):
@@ -232,7 +240,7 @@ class AutoTorrent(object):
                 path_files = defaultdict(list)
                 for f in torrent[b'info'][b'files']:
                     logger.debug('Handling torrent file %r' % (f, ))
-                    orig_path = [x.decode('utf-8') for x in f[b'path'] if x] # remove empty fragments
+                    orig_path = [self.try_decode(x) for x in f[b'path'] if x] # remove empty fragments
                     if not self.is_legal_path(orig_path):
                         raise IllegalPathException('That is a dangerous torrent path %r, bailing' % orig_path)
                     
