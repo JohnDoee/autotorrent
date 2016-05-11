@@ -4,15 +4,49 @@ import logging
 import os
 import shutil
 
-from six.moves import configparser
+from six.moves import configparser, input
 
 from autotorrent.at import AutoTorrent
+from autotorrent.clients import TORRENT_CLIENTS
 from autotorrent.db import Database
 from autotorrent.humanize import humanize_bytes
+
+def query_yes_no(question, default="yes"):
+    """Ask a yes/no question via raw_input() and return their answer.
+
+    "question" is a string that is presented to the user.
+    "default" is the presumed answer if the user just hits <Enter>.
+        It must be "yes" (the default), "no" or None (meaning
+        an answer is required of the user).
+
+    The "answer" return value is True for "yes" or False for "no".
+    """
+    valid = {"yes": True, "y": True, "ye": True,
+             "no": False, "n": False}
+    if default is None:
+        prompt = " [y/n] "
+    elif default == "yes":
+        prompt = " [Y/n] "
+    elif default == "no":
+        prompt = " [y/N] "
+    else:
+        raise ValueError("invalid default answer: '%s'" % default)
+
+    while True:
+        print(question + prompt)
+        choice = input().lower()
+        if default is not None and choice == '':
+            return valid[default]
+        elif choice in valid:
+            return valid[choice]
+        else:
+            print("Please respond with 'yes' or 'no' (or 'y' or 'n').\n")
+        
 
 def commandline_handler():
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config", dest="config_file", default="autotorrent.conf", help="Path to config file")
+    parser.add_argument("-l", "--client", dest="client", default="default", help="Name of client to use (when multiple configured)")
     parser.add_argument("--create_config", dest="create_config_file", nargs='?', const='autotorrent.conf', default=None, help="Creates a new configuration file")
     
     parser.add_argument("-t", "--test_connection", action="store_true", dest="test_connection", default=False, help='Tests the connection to the torrent client')
@@ -33,6 +67,60 @@ def commandline_handler():
             src = os.path.join(os.path.dirname(__file__), 'autotorrent.conf.dist')
             shutil.copy(src, args.create_config_file)
             print('Created configuration file %r' % args.create_config_file)
+        
+        if query_yes_no('Do you want to try and auto-configure torrent client?'):
+            working_clients = []
+            for client_name, cls in TORRENT_CLIENTS.items():
+                obj = cls.auto_config()
+                try:
+                    if obj.test_connection():
+                        working_clients.append(obj)
+                except:
+                    continue
+            
+            client_config = {
+                'client': 'rtorrent',
+                'url': 'http://user:pass@127.0.0.1/RPC2',
+                'label': 'autotorrent',
+            }
+            
+            if working_clients:
+                print('Found %i clients - please choose a client to use' % len(working_clients))
+                for i, client in enumerate(working_clients, 1):
+                    print('[%i] %s' % (i, client.identifier))
+                print('[0] None of the above - do not auto-configure any client\n')
+                
+                while True:
+                    error = False
+                    try:
+                        choice = int(input('> '))
+                    except ValueError:
+                        error = True
+                    else:
+                        if len(working_clients) < choice or choice < 0:
+                            error = True
+                    
+                    if error:
+                        print('Invalid choice, please choose again')
+                    else:
+                        if choice > 0:
+                            client = working_clients[choice-1]
+                            print('Setting client to %s' % client.identifier)
+                            client_config = client.get_config()
+                            client_config['client'] = client.identifier
+                        
+                        break
+            else:
+                print('Unable to auto-detect any clients, you will have to configure it manually.')
+            
+            config = configparser.ConfigParser()
+            config.read(args.create_config_file)
+            for k, v in client_config.items():
+                config.set('client', k, v)
+            
+            with open(args.create_config_file, 'w') as configfile:
+                config.write(configfile)
+        
         quit()
     
     if not os.path.isfile(args.config_file):
@@ -69,23 +157,23 @@ def commandline_handler():
                   normal_mode, unsplitable_mode, exact_mode,
                   hash_name_mode, hash_size_mode, hash_slow_mode)
     
-    client_name = config.get('client', 'client')
-    if client_name == 'rtorrent':
-        from autotorrent.clients.rtorrent import RTorrentClient
-        client = RTorrentClient(config.get('client', 'url'),
-                                config.get('client', 'label'))
-    elif client_name == 'deluge':
-        from autotorrent.clients.deluge import DelugeClient
-        host, port = config.get('client', 'host').split(':')
-        client = DelugeClient(host, int(port),
-                              config.get('client', 'username'),
-                              config.get('client', 'password'))
-    elif client_name == 'transmission':
-        from autotorrent.clients.transmission import TransmissionClient
-        client = TransmissionClient(config.get('client', 'url'))
-    else:
-        print('Unknown client %r' % client_name)
+    client_option = 'client'
+    if args.client != 'default':
+        client_option += '-%s' % args.client
+    
+    try:
+        client_name = config.get(client_option, 'client')
+    except configparser.NoSectionError:
+        print('It seems like %r is not a configured client' % args.client)
         quit(1)
+    
+    if client_name not in TORRENT_CLIENTS:
+        print('Unknown client %r - Known clients are: %s' % (client_name, ', '.join(TORRENT_CLIENTS.keys())))
+        quit(1)
+    
+    client_options = dict(config.items(client_option))
+    client_options.pop('client')
+    client = TORRENT_CLIENTS[client_name](**client_options)
     
     at = AutoTorrent(
         db,
@@ -119,7 +207,9 @@ def commandline_handler():
         dry_run_data = []
         
         print('Found %s torrent(s)' % len(args.addfile))
-        at.populate_torrents_seeded()
+        if not dry_run:
+            at.populate_torrents_seeded()
+        
         for torrent in args.addfile:
             result = at.handle_torrentfile(os.path.join(current_path, torrent), dry_run)
             if dry_run:

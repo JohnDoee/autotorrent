@@ -55,6 +55,9 @@ class Database(object):
         Does the actual insertion into the database.
         """
         path = os.path.abspath(os.path.join(root, f))
+        if not os.access(path, os.R_OK):
+            logger.warning('Path %r is not accessible, skipping' % path)
+            return
         
         if mode == 'exact':
             key = self.keyify(prefix, f)

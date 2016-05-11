@@ -927,4 +927,8 @@ class TestAutoTorrent(TestCase):
         self.assertEqual(dry_run_result[0], 33)
         self.assertEqual(dry_run_result[1], 0)
         self.assertEqual(dry_run_result[2], False)
-        
+    
+    def test_try_decode(self):
+        self.assertEqual(self.at.try_decode(b'\xbf'), '\xbf')
+        self.assertEqual(self.at.try_decode(b'\xc3\xbc'), u'\xfc')
+        self.assertEqual(self.at.try_decode(b'a'), u'a')

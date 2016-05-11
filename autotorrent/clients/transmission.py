@@ -7,6 +7,7 @@ import os
 
 import requests
 
+from ._base import BaseClient
 from ..bencode import bencode
 
 logger = logging.getLogger(__name__)
@@ -19,8 +20,10 @@ class RPCCallFailedException(Exception):
 
 class TransmissionVersionTooLowException(Exception):
     pass
+
+class TransmissionClient(BaseClient):
+    identifier = 'transmission'
     
-class TransmissionClient(object):
     _session_id = ''
     def __init__(self, url):
         """
@@ -56,6 +59,46 @@ class TransmissionClient(object):
         
         return r['arguments']
     
+    def get_config(self):
+        """
+        Get the current configuration that can be used in the autotorrent config file
+        """
+        return {
+            'url': self.url,
+        }
+    
+    @classmethod
+    def auto_config(cls):
+        """
+        Tries to auto configure transmission using the .config/transmission-daemon/settings.json file
+        """
+        config_path = os.path.expanduser('~/.config/transmission-daemon/settings.json')
+        if not os.path.isfile(config_path):
+            logger.debug('transmission daemon config file was not found')
+            return
+        
+        if not os.access(config_path, os.R_OK):
+            logger.debug('Unable to access transmission daemon config file at %s' % config_path)
+            return
+        
+        with open(config_path, 'r') as f:
+            config_data = json.load(f)
+        
+        ip = config_data.get('rpc-bind-address')
+        port = config_data.get('rpc-port')
+        if ip == '0.0.0.0':
+            ip = '127.0.0.1'
+        
+        if not ip:
+            logger.debug('Unable to find a bind ip')
+            return
+        
+        if not port:
+            logger.debug('Unable to find port')
+            return
+        
+        return cls('http://%s:%s/transmission/rpc' % (ip, port))
+    
     def test_connection(self):
         """
         Tests the Transmission JSONRPC connection, returns message if found.
@@ -89,11 +132,11 @@ class TransmissionClient(object):
         
         encoded_torrent = base64.b64encode(bencode(torrent))
         
-        kwargs = {'download-dir': os.path.dirname(destination_path), 'metainfo': encoded_torrent, 'paused': True}
+        kwargs = {'download-dir': os.path.dirname(destination_path), 'metainfo': encoded_torrent.decode('utf-8'), 'paused': True}
         result = self.call('torrent-add', **kwargs)
         tid = result['torrent-added']['id']
         
-        self.call('torrent-rename-path', ids=[tid], path=name, name=os.path.basename(destination_path))
+        self.call('torrent-rename-path', ids=[tid], path=name.decode('utf-8'), name=os.path.basename(destination_path))
         self.call('torrent-start', ids=[tid])
         
         return True

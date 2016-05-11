@@ -1,6 +1,7 @@
+import json
 import os
-
-from io import open
+import shutil
+import tempfile
 
 from unittest import TestCase
 
@@ -18,6 +19,7 @@ class TransmissionClient(RealTransmissionClient):
         self._torrent_id = 1
     
     def call(self, method, **kwargs):
+        _ = json.dumps(kwargs)
         if method == 'session-get':
             return {'version': 'version: 2.82 (14160)',
                     'config-dir': '/home/autotorrent/.config/transmission-daemon',
@@ -39,6 +41,11 @@ class TransmissionClient(RealTransmissionClient):
 class TestTransmissionClient(TestCase):
     def setUp(self):
         self.client = TransmissionClient('http://127.0.0.1:9091')
+        self._temp_path = tempfile.mkdtemp()
+    
+    def tearDown(self):
+        if self._temp_path.startswith('/tmp'): # paranoid-mon, the best pokemon.
+            shutil.rmtree(self._temp_path)
     
     def test_test_connection(self):
         self.assertEqual(self.client.test_connection(), "version: 2.82 (14160), config-dir: /home/autotorrent/.config/transmission-daemon, download-dir: /home/autotorrent/Downloads")
@@ -58,9 +65,87 @@ class TestTransmissionClient(TestCase):
         
         return self.client.add_torrent(torrent, '/tmp/', files)
     
-    
     def test_add_torrent_complete(self):
         self.assertTrue(self._add_torrent_with_links(['a', 'b', 'c']))
         self.assertTrue((2 in self.client._torrents))
         self.assertEqual(self.client._torrents[2]['paused'], False)
     
+    def test_auto_config_successful_config(self):
+        os.environ['HOME'] = self._temp_path
+        config_path = os.path.join(self._temp_path, '.config/transmission-daemon')
+        os.makedirs(config_path)
+        
+        with open(os.path.join(config_path, 'settings.json'), 'w') as f:
+            json.dump({
+                'rpc-bind-address': '0.0.0.0',
+                'rpc-port': 12312,
+            }, f)
+        
+        tc = TransmissionClient.auto_config()
+        self.assertTrue(tc is not None)
+        
+        self.assertEqual(tc.get_config(), {
+            'url': 'http://127.0.0.1:12312/transmission/rpc'
+        })
+    
+    def test_auto_config_successful_differnet_bind_ip_config(self):
+        os.environ['HOME'] = self._temp_path
+        config_path = os.path.join(self._temp_path, '.config/transmission-daemon')
+        os.makedirs(config_path)
+        
+        with open(os.path.join(config_path, 'settings.json'), 'w') as f:
+            json.dump({
+                'rpc-bind-address': '127.22.54.99',
+                'rpc-port': 12312,
+            }, f)
+        
+        tc = TransmissionClient.auto_config()
+        self.assertTrue(tc is not None)
+        
+        self.assertEqual(tc.get_config(), {
+            'url': 'http://127.22.54.99:12312/transmission/rpc'
+        })
+    
+    def test_auto_config_unsuccessful_missing_ip(self):
+        os.environ['HOME'] = self._temp_path
+        config_path = os.path.join(self._temp_path, '.config/transmission-daemon')
+        os.makedirs(config_path)
+        
+        with open(os.path.join(config_path, 'settings.json'), 'w') as f:
+            json.dump({
+                'rpc-port': 12312,
+            }, f)
+        
+        tc = TransmissionClient.auto_config()
+        self.assertTrue(tc is None)
+    
+    def test_auto_config_unsuccessful_missing_port(self):
+        os.environ['HOME'] = self._temp_path
+        config_path = os.path.join(self._temp_path, '.config/transmission-daemon')
+        os.makedirs(config_path)
+        
+        with open(os.path.join(config_path, 'settings.json'), 'w') as f:
+            json.dump({
+                'rpc-bind-address': '127.22.54.99',
+            }, f)
+        
+        tc = TransmissionClient.auto_config()
+        self.assertTrue(tc is None)
+    
+    def test_auto_config_unsuccessful_problematic_file(self):
+        os.environ['HOME'] = self._temp_path
+        config_path = os.path.join(self._temp_path, '.config/transmission-daemon')
+        os.makedirs(config_path)
+        
+        tc = TransmissionClient.auto_config()
+        self.assertTrue(tc is None)
+        
+        with open(os.path.join(config_path, 'settings.json'), 'w') as f:
+            json.dump({
+                'rpc-bind-address': '127.22.54.99',
+                'rpc-port': 12312,
+            }, f)
+        
+        os.chmod(os.path.join(config_path, 'settings.json'), 0)
+        tc = TransmissionClient.auto_config()
+        self.assertTrue(tc is None)
