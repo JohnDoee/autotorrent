@@ -31,10 +31,10 @@ From GitHub (develop):
     virtualenv autotorrent-env
     autotorrent-env/bin/pip install git+https://github.com/JohnDoee/autotorrent.git#develop
 
-Get the configuration file
+Create the configuration file
 ::
 
-    wget -Oautotorrent.conf https://github.com/JohnDoee/autotorrent/raw/develop/autotorrent.conf.example
+    autotorrent-env/bin/pip --create_config autotorrent-env/autotorrent.conf
 
 Upgrade from previous version
 -----------------------------
