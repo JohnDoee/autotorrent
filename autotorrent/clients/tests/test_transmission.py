@@ -19,6 +19,7 @@ class TransmissionClient(RealTransmissionClient):
         self._torrent_id = 1
     
     def call(self, method, **kwargs):
+        _ = json.dumps(kwargs)
         if method == 'session-get':
             return {'version': 'version: 2.82 (14160)',
                     'config-dir': '/home/autotorrent/.config/transmission-daemon',

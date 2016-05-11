@@ -132,11 +132,11 @@ class TransmissionClient(BaseClient):
         
         encoded_torrent = base64.b64encode(bencode(torrent))
         
-        kwargs = {'download-dir': os.path.dirname(destination_path), 'metainfo': encoded_torrent, 'paused': True}
+        kwargs = {'download-dir': os.path.dirname(destination_path), 'metainfo': encoded_torrent.decode('utf-8'), 'paused': True}
         result = self.call('torrent-add', **kwargs)
         tid = result['torrent-added']['id']
         
-        self.call('torrent-rename-path', ids=[tid], path=name, name=os.path.basename(destination_path))
+        self.call('torrent-rename-path', ids=[tid], path=name.decode('utf-8'), name=os.path.basename(destination_path))
         self.call('torrent-start', ids=[tid])
         
         return True
