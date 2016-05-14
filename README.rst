@@ -21,14 +21,18 @@ Status
 
 Master branch
 ~~~~~~~~~~~~~~    
-.. image:: https://coveralls.io/repos/github/JohnDoee/autotorrent/badge.svg?branch=master :target: https://coveralls.io/github/JohnDoee/autotorrent?branch=master
-.. image:: https://travis-ci.org/JohnDoee/autotorrent.svg?branch=master :target: https://travis-ci.org/JohnDoee/autotorrent
+.. image:: https://coveralls.io/repos/github/JohnDoee/autotorrent/badge.svg?branch=master
+   :target: https://coveralls.io/github/JohnDoee/autotorrent?branch=master
+.. image:: https://travis-ci.org/JohnDoee/autotorrent.svg?branch=master
+   :target: https://travis-ci.org/JohnDoee/autotorrent
 
 
 Develop branch
 ~~~~~~~~~~~~~~
-.. image:: https://coveralls.io/repos/github/JohnDoee/autotorrent/badge.svg?branch=develop :target: https://coveralls.io/github/JohnDoee/autotorrent?branch=develop 
-.. image:: https://travis-ci.org/JohnDoee/autotorrent.svg?branch=develop :target: https://travis-ci.org/JohnDoee/autotorrent
+.. image:: https://coveralls.io/repos/github/JohnDoee/autotorrent/badge.svg?branch=develop
+   :target: https://coveralls.io/github/JohnDoee/autotorrent?branch=develop 
+.. image:: https://travis-ci.org/JohnDoee/autotorrent.svg?branch=develop
+   :target: https://travis-ci.org/JohnDoee/autotorrent
 
 Install
 -------
