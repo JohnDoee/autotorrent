@@ -85,8 +85,8 @@ def encode_bool(x, r):
         encode_int(1, r)
     else:
         encode_int(0, r)
-        
-def encode_string(x, r):  
+
+def encode_string(x, r):
     r.extend((str(len(x)).encode(), b':', x))
 
 def encode_list(x, r):
@@ -105,6 +105,8 @@ def encode_dict(x,r):
 encode_func = {}
 encode_func[Bencached] = encode_bencached
 encode_func[int] = encode_int
+if six.PY2:
+    encode_func[long] = encode_int
 encode_func[str] = encode_string
 encode_func[bytes] = encode_string
 encode_func[list] = encode_list

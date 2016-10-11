@@ -67,6 +67,12 @@ def commandline_handler():
             src = os.path.join(os.path.dirname(__file__), 'autotorrent.conf.dist')
             shutil.copy(src, args.create_config_file)
             print('Created configuration file %r' % args.create_config_file)
+
+        client_config = {
+            'client': 'rtorrent',
+            'url': 'http://user:pass@127.0.0.1/RPC2',
+            'label': 'autotorrent',
+        }
         
         if query_yes_no('Do you want to try and auto-configure torrent client?'):
             working_clients = []
@@ -77,12 +83,6 @@ def commandline_handler():
                         working_clients.append(obj)
                 except:
                     continue
-            
-            client_config = {
-                'client': 'rtorrent',
-                'url': 'http://user:pass@127.0.0.1/RPC2',
-                'label': 'autotorrent',
-            }
             
             if working_clients:
                 print('Found %i clients - please choose a client to use' % len(working_clients))
@@ -113,13 +113,13 @@ def commandline_handler():
             else:
                 print('Unable to auto-detect any clients, you will have to configure it manually.')
             
-            config = configparser.ConfigParser()
-            config.read(args.create_config_file)
-            for k, v in client_config.items():
-                config.set('client', k, v)
+        config = configparser.ConfigParser()
+        config.read(args.create_config_file)
+        for k, v in client_config.items():
+            config.set('client', k, v)
             
-            with open(args.create_config_file, 'w') as configfile:
-                config.write(configfile)
+        with open(args.create_config_file, 'w') as configfile:
+            config.write(configfile)
         
         quit()
     

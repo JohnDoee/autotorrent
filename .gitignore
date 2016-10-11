@@ -25,3 +25,4 @@ _trial_temp
 docs/_build*
 .env*
 autotorrent.conf
+.coverage
