@@ -52,7 +52,7 @@ From GitHub (develop):
 Create the configuration file
 ::
 
-    autotorrent-env/bin/pip --create_config autotorrent-env/autotorrent.conf
+    autotorrent-env/bin/autotorrent --create_config
 
 Upgrade from previous version
 -----------------------------
