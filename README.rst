@@ -124,8 +124,6 @@ disks
 
 A list of disks where to build the search database from.
 
-The keys must be sequential, i.e. disk1, disk2, disk3 etc.
-
 Scan modes
 ----------
 

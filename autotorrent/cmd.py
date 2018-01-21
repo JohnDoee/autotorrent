@@ -136,11 +136,7 @@ def commandline_handler():
         parser.error('AutoTorrent is not properly configured, please edit %r' % args.config_file)
         quit(1)
 
-    i = 1
-    disks = []
-    while config.has_option('disks', 'disk%s' % i):
-        disks.append(config.get('disks', 'disk%s' % i))
-        i += 1
+    disks = [disk for _, disk in config.items('disks')]
     
     scan_mode = set(config.get('general', 'scan_mode').split(','))
     
