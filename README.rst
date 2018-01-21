@@ -52,7 +52,7 @@ From GitHub (develop):
 Create the configuration file
 ::
 
-    autotorrent-env/bin/pip --create_config autotorrent-env/autotorrent.conf
+    autotorrent-env/bin/autotorrent --create_config
 
 Upgrade from previous version
 -----------------------------
@@ -124,8 +124,6 @@ disks
 
 A list of disks where to build the search database from.
 
-The keys must be sequential, i.e. disk1, disk2, disk3 etc.
-
 Scan modes
 ----------
 
@@ -183,11 +181,11 @@ Instructions
 
 Start by installing and configuring.
 
-Step 1, build the database with ``autotorrent -r``, this may take some
+Step 1, build the database with ``autotorrent-env/bin/autotorrent -r``, this may take some
 time.
 
 Step 2, have some torrents ready and run
-``autotorrent -a folder/with/torrents/*.torrents``, this command will
+``autotorrent-env/bin/autotorrent -a path/to/torrents/*.torrent``, this command will
 spit out how it went with adding the torrents.
 
 And you're good to go.
