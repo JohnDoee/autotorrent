@@ -1,3 +1,10 @@
+Version 1.6.3 (21-01-2018)
+===========================================================
+
+*   Bugfix: Transmission single-file problems
+*   Bugfix: Improved documentation
+*   Feature: Allow arbitrary keys in disks config section
+
 Version 1.6.2 (11-10-2016)
 ===========================================================
 
