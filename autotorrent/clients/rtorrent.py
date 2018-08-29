@@ -183,7 +183,7 @@ class RTorrentClient(BaseClient):
 
         logger.info('Sending to rtorrent: %r' % cmd)
         if 'load.start' in self.get_methods():
-            self.proxy.load.start(*cmd)
+            self.proxy.load.start('', *cmd)
         else:
             self.proxy.load_start(*cmd)
 
