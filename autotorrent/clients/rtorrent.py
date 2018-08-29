@@ -178,11 +178,11 @@ class RTorrentClient(BaseClient):
 
         infohash = hashlib.sha1(bencode(torrent[b'info'])).hexdigest()
 
-        cmd = [torrent_file, 'd.set_directory_base="%s"' % os.path.abspath(destination_path)]
+        cmd = [torrent_file, 'd.set_directory_base="%s"' % os.path.abspath(destination_path), 'd.set_custom1=%s'
+               % quote(self.label)]
         if 'd.directory_base.set' in self.get_methods():
-            cmd = [torrent_file, 'd.directory_base.set="%s"' % os.path.abspath(destination_path)]
-
-        cmd.append('d.set_custom1=%s' % quote(self.label))
+            cmd = [torrent_file, 'd.directory_base.set="%s"' % os.path.abspath(destination_path), 'd.custom1.set=%s'
+                   % quote(self.label)]
 
         logger.info('Sending to rtorrent: %r' % cmd)
         if 'load.start' in self.get_methods():
