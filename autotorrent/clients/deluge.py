@@ -111,7 +111,7 @@ class DelugeClient(BaseClient):
         logger.info('Getting a list of torrent hashes')
         self._login()
         result = self.rpcclient.call('core.get_torrents_status', {}, ['name'])
-        return set(x.lower().decode('ascii') for x in result.keys())
+        return set(x.lower() for x in result.keys())
 
     def add_torrent(self, torrent, destination_path, files, fast_resume=True):
         """
@@ -129,6 +129,10 @@ class DelugeClient(BaseClient):
         infohash = hashlib.sha1(bencode(torrent[b'info'])).hexdigest()
         encoded_torrent = base64.b64encode(bencode(torrent))
 
+        if b'files' not in torrent[b'info'] and not destination_path.endswith(os.sep):
+            logger.debug('Singlefile torrent, adding sep to avoid weird naming in Deluge')
+            destination_path += os.sep
+
         basename = os.path.basename(destination_path)
         mapped_files = {}
         for i, f in enumerate(files):
@@ -140,4 +144,4 @@ class DelugeClient(BaseClient):
                                                                 'mapped_files': mapped_files,
                                                                 'seed_mode': fast_resume})
 
-        return result and result.decode('utf-8') == infohash
+        return result and result == infohash
