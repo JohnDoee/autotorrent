@@ -4,16 +4,20 @@
 parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
 cd "$parent_path"
 
+# flexget command to fetch torrents from cross-seed target sites
+# Remember to change the site names to your own!
+flexget_command="~/flexget/bin/flexget execute --tasks sse isl"
+
 # Rescan option, only needed when we know there is new data
 # We need to prevent all database access while rescanning
-if [ $1 = "rescan" ]; then
+if [ "$1" = "rescan" ]; then
     sleep 1 # make sure deluge finished moving data before rescanning
     flock -x ./autotorrent.lock autotorrent-env/bin/autotorrent -r # flock to prevent multiple rescans
-    # ~/flexget/bin/flexget execute --tasks sse isl # It might be smart to execute flexget when we know there might be.
+    eval $flexget_command # It might be smart to execute flexget when we know there might be.
 fi
 
-if [ $1 = "flexget" ]; then
-    ~/flexget/bin/flexget execute --tasks sse isl
+if [ "$1" = "flexget" ]; then
+    eval $flexget_command
 fi
 
 # Add the actual data
