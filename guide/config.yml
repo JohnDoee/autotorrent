@@ -1,0 +1,23 @@
+templates:
+  cross-seed:
+    seen: local
+    cross-seed:
+      - '/mnt/incoming/*'
+      - '/mnt/movies/*'
+      - '/mnt/tv/*/*/*'
+
+tasks:
+  # Site IsL
+  isl:
+    rss: 'https://www.isl.example.com/rss.php'
+    template: cross-seed
+    download: /mnt/torrents/isl/tor/
+
+  # Site SSE
+  sse:
+    rss: 'https://www.sse.example.com/rss.php'
+    template: cross-seed
+    download: /mnt/torrents/sse/tor/
+    manipulate: # Extract name title in rss feed: Stuff 1 2 An.Item-stuff
+      - title:
+          extract: '(?:[^ ]+ ){3}(.+)''
