@@ -20,4 +20,4 @@ tasks:
     download: /mnt/torrents/sse/tor/
     manipulate: # Extract name title in rss feed: Stuff 1 2 An.Item-stuff
       - title:
-          extract: '(?:[^ ]+ ){3}(.+)''
+          extract: '(?:[^ ]+ ){3}(.+)'
