@@ -14,13 +14,15 @@ from ..humanize import humanize_bytes
 
 logger = logging.getLogger(__name__)
 
+
 class UnableToLoginException(Exception):
     pass
+
 
 class DelugeClient(BaseClient):
     identifier = 'deluge'
 
-    def __init__(self, host, username, password):
+    def __init__(self, host, username, password, label=None):
         """
         Initializes a new Deluge client.
 
@@ -32,6 +34,7 @@ class DelugeClient(BaseClient):
         self.port = int(port)
         self.username = username
         self.password = password
+        self.label = label
         self.rpcclient = DelugeRPCClient(self.host, self.port, self.username, self.password, decode_utf8=True)
 
     def _login(self):
@@ -143,5 +146,9 @@ class DelugeClient(BaseClient):
                                                                 'download_location': os.path.dirname(destination_path),
                                                                 'mapped_files': mapped_files,
                                                                 'seed_mode': fast_resume})
+
+        if self.label:
+            self.rpcclient.call('label.add', self.label)
+            self.rpcclient.call('label.set_torrent', infohash, self.label)
 
         return result and result == infohash

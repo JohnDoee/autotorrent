@@ -114,6 +114,7 @@ deluge settings
 - host - an ip:port pair, e.g. 127.0.0.1:12345
 - username - deluge rpc username
 - password - deluge rpc password
+- label - label the torrent, remember to enable the label plugin
 
 transmission settings
 *********************
