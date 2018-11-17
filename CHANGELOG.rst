@@ -1,3 +1,12 @@
+Version Unreleased ()
+===========================================================
+
+*   Feature: Added guide to create a good workflow
+*   Feature: Added Deluge label support
+*   Bugfix: Small problem with Deluge single-file seeding
+    and name in Deluge
+*   Bugfix: Divide by zero bug with buggy .torrent file fixed
+
 Version 1.6.4 (30-08-2018)
 ===========================================================
 
