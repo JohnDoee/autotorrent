@@ -21,12 +21,20 @@ if [ "$1" = "flexget" ]; then
 fi
 
 # Add the actual data
-flock -s ./autotorrent.lock autotorrent-env/bin/autotorrent -a /mnt/torrents/isl/tor/*.torrent &
-flock -s ./autotorrent.lock autotorrent-env/bin/autotorrent -c autotorrent-sse.conf -a /mnt/torrents/sse/tor/*.torrent &
+for f in /mnt/torrents/isl/tor/*.torrent; do # Only run if files exist
+    flock -s ./autotorrent.lock autotorrent-env/bin/autotorrent -a /mnt/torrents/isl/tor/*.torrent &
+    break
+done
+
+for f in /mnt/torrents/sse/tor/*.torrent; do # Only run if files exist
+    flock -s ./autotorrent.lock autotorrent-env/bin/autotorrent -c autotorrent-sse.conf -a /mnt/torrents/sse/tor/*.torrent &
+    break
+done
 
 # Wait for them all to finish
 wait
 
 # Cleanup torrent folders, there is no need to check old torrents (it will slow down autotorrent)
+# Move files when they are 2880 minutes old (48 hours)
 find /mnt/torrents/isl/tor/*.torrent -cmin +2880 -exec mv '{}' /mnt/torrents/isl/tor-done/ \;
 find /mnt/torrents/sse/tor/*.torrent -cmin +2880 -exec mv '{}' /mnt/torrents/sse/tor-done/ \;
