@@ -70,7 +70,7 @@ class TransmissionClient(BaseClient):
     @classmethod
     def auto_config(cls):
         """
-        Tries to auto configure transmission using the .config/transmission-daemon/settings.json file
+        Tries to auto configure transmission using the ~/.config/transmission-daemon/settings.json file
         """
         config_path = os.path.expanduser('~/.config/transmission-daemon/settings.json')
         if not os.path.isfile(config_path):
