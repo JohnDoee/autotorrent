@@ -210,8 +210,8 @@ FAQ
 
 **Q: How are files with relative path in the configuration file, found?**
 
-The paths should be relative to the configuration file, e.g. `/home/user/autotorrent-env/autotorrent.conf`,
-then `store_path=store_paths/X/` resolves to `/home/user/autotorrent-env/store_path/`
+The paths should be relative to the configuration file, e.g. ``/home/user/autotorrent-env/autotorrent.conf``,
+then ``store_path=store_paths/X/`` resolves to ``/home/user/autotorrent-env/store_path/``.
 
 
 **Q: I have three sites I cross-seed between, how do you suggest I structure it?**
@@ -219,7 +219,7 @@ then `store_path=store_paths/X/` resolves to `/home/user/autotorrent-env/store_p
 Say, you have site X, Y and Z. You want to seed across the sites as they share lots of content.
 You download all your data into /home/user/downloads/. For this you will need three configuration file, one for each site.
 
-AutoTorrent is installed into `/home/user/autotorrent-env/`.
+AutoTorrent is installed into ``/home/user/autotorrent-env/``.
 
 Only store_path is recommended to vary between the configuration files (the others are optional).
 
@@ -236,7 +236,7 @@ disks paths can be:
 
 **Q: Can I use the same Database file for several configuration files?**
 
-Yes, if they have the same disks. Don't worry about adding the store_path to the disks, AutoTorrent will figure it out.
+Yes, if they have the same disks. Don't worry about adding the `store_path` to the disks, AutoTorrent will figure it out.
 
 **Q: What problems can occur?**
 
