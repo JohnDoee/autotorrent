@@ -108,11 +108,11 @@ class QBittorrentClient(BaseClient):
             os.rename(tmp_folder, os.path.join(destination_path, name))
 
         self._login_check()
-        print(self._session.post(urljoin(self.url, 'api/v2/torrents/add'), files={'torrents': encoded_torrent}, data={
+        self._session.post(urljoin(self.url, 'api/v2/torrents/add'), files={'torrents': encoded_torrent}, data={
             'savepath': destination_path,
             'category': self.category,
             'skip_checking': (fast_resume and 'true' or 'false'),
             'paused': 'false',
-        }).text)
+        })
 
         return True
