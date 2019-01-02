@@ -77,19 +77,19 @@ general
 ~~~~~~~
 
 -  ``db`` - Path to the database file
--  ``store\_path`` - Folder where the virtual folders seeded, resides
--  ``ignore\_files`` - A comma seperated list of files that should be
+-  ``store_path`` - Folder where the virtual folders seeded, resides
+-  ``ignore_files`` - A comma seperated list of files that should be
    ignored (supports wildcards)
--  ``add\_limit\_size`` - Max size, in bytes, the total torrent size is
+-  ``add_limit_size`` - Max size, in bytes, the total torrent size is
    allowed to vary
--  ``add\_limit\_percent`` - Max percent the total torrent size is allowed
+-  ``add_limit_percent`` - Max percent the total torrent size is allowed
    to vary
--  ``link\_type`` - What kind of link should AutoTorrent make? the options are
+-  ``link_type`` - What kind of link should AutoTorrent make? the options are
    hard and soft.
 -  ``scan_mode`` - options are unsplitable, normal and exact. These can be used
    in combination. See the scan_mode section for more information.
 
-the add\_limit\_\* variables allow for downloading of e.g. different
+the ``add_limit_*`` variables allow for downloading of e.g. different
 NFOs and other small files that makes a difference in the torrents.
 
 client
