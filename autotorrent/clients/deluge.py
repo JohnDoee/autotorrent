@@ -148,7 +148,8 @@ class DelugeClient(BaseClient):
                                                                 'seed_mode': fast_resume})
 
         if self.label:
-            self.rpcclient.call('label.add', self.label)
+            if self.label not in self.rpcclient.call('label.get_labels'):
+                self.rpcclient.call('label.add', self.label)
             self.rpcclient.call('label.set_torrent', infohash, self.label)
 
         return result and result == infohash
