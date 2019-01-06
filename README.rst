@@ -75,7 +75,7 @@ Flags
 - ``-d, --delete_torrents`` - Delete .torrent files when they are added to the client succesfully.
 - ``--dry-run`` - Don't add any torrents to client, just scan for files needed for torrents.
 - ``-h, --help`` - Shows help message and exits.
-- ``-l CLIENT, --client CLIENT`` - Name of client to use (when multiple configured). Read more here: clients_.
+- ``-l CLIENT, --client CLIENT`` - Name of client to use (when multiple configured). `Read more here <#q-can-i-have-multiple-clients-configured-simultaneously>`_.
 - ``-r, --rebuild`` - Rebuilds the database (necessary for new files/file changes on disk).
 - ``-t, --test-connection`` - Test the connection to the torrent client.
 - ``--verbose`` - Increase output verbosity.
@@ -270,7 +270,7 @@ See: http://www.cyberciti.biz/tips/understanding-unixlinux-symbolic-soft-and-har
 .. _clients:
 
 Q: Can I have multiple clients configured simultaneously?
-=======================
+~~~~~~~~~~~~~~~
 Yes, this can be done by prefixing a name of your choosing, with ``client-``. For example, you can name the section ``client-goodclient`` instead of just ``client``. Then specify the new client/name without the prefix using the commandline argument 
 :: 
     autotorrent -l goodclient
