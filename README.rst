@@ -75,7 +75,7 @@ Flags
 - ``-d, --delete_torrents`` - Delete .torrent files when they are added to the client succesfully.
 - ``--dry-run`` - Don't add any torrents to client, just scan for files needed for torrents.
 - ``-h, --help`` - Shows help message and exits.
-- ``-l CLIENT, --client CLIENT`` - Name of client to use (when multiple configured). [Read more here](#q-can-i-have-multiple-clients-configured-simultaneously)
+- ``-l CLIENT, --client CLIENT`` - Name of client to use (when multiple configured). Read more here: clients_
 - ``-r, --rebuild`` - Rebuilds the database (necessary for new files/file changes on disk).
 - ``-t, --test-connection`` - Test the connection to the torrent client.
 - ``--verbose`` - Increase output verbosity.
@@ -83,7 +83,7 @@ Flags
 Configuration
 -------------
 
-All settings can be found and changed in autotorrent.conf, this file
+All settings can be found and changed in ``autotorrent.conf``, this file
 must reside in the same folder as autotorrent is executed from.
 
 general
@@ -124,7 +124,7 @@ To use unix socket for scgi, make an url with no `ip:port` and instead a path, e
 
 deluge settings
 ***************
-- ``host`` - an ip:port pair, e.g. `127.0.0.1:12345`
+- ``host`` - an ip:port pair, e.g. ``127.0.0.1:12345``
 - ``username`` - deluge rpc username
 - ``password`` - deluge rpc password
 - ``label`` - label the torrent, remember to enable the label plugin
@@ -269,6 +269,7 @@ See: http://www.cyberciti.biz/tips/understanding-unixlinux-symbolic-soft-and-har
 
 Q: Can I have multiple clients configured simultaneously?
 ~~~~~~~~~~~~~~~
+.. _clients:
 Yes, this can be done by prefixing a name of your choosing, with ``client-``. For example, you can name the section ``client-goodclient`` instead of just ``client``. Then specify the new client/name without the prefix using the commandline argument 
 :: 
     autotorrent -l goodclient
@@ -276,4 +277,4 @@ Yes, this can be done by prefixing a name of your choosing, with ``client-``. Fo
 License
 -------
 
-MIT, see LICENSE
+MIT, see [LICENSE]_
