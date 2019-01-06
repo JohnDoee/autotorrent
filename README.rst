@@ -267,9 +267,9 @@ Q: What are hardlinks and what are the risks or problems associated with using t
 ~~~~~~~~~~~~~~~
 See: http://www.cyberciti.biz/tips/understanding-unixlinux-symbolic-soft-and-hard-links.html
 
+.. _clients:
 Q: Can I have multiple clients configured simultaneously?
 ~~~~~~~~~~~~~~~
-.. _clients:
 Yes, this can be done by prefixing a name of your choosing, with ``client-``. For example, you can name the section ``client-goodclient`` instead of just ``client``. Then specify the new client/name without the prefix using the commandline argument 
 :: 
     autotorrent -l goodclient
@@ -277,4 +277,4 @@ Yes, this can be done by prefixing a name of your choosing, with ``client-``. Fo
 License
 -------
 
-MIT, see [LICENSE]_
+MIT, see [LICENSE](../blob/master/LICENSE)
