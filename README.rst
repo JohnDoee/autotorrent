@@ -278,4 +278,4 @@ Yes, this can be done by prefixing a name of your choosing, with ``client-``. Fo
 License
 -------
 
-MIT, see `LICENSE <../LICENSE>`_
+MIT, see `LICENSE <../master/LICENSE>`_
