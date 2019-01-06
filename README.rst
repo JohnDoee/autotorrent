@@ -12,7 +12,7 @@ Requirements
 ------------
 
 - Linux, BSD, OSX - Something not windows
-- rTorrent, Deluge and Transmission
+- rTorrent, Deluge, qBittorrent or Transmission
 - Python 2.6, 2.7, 3.3, 3.4
 - Shell / SSH / Putty
 
