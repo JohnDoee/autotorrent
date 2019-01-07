@@ -100,7 +100,7 @@ general
 -  ``link_type`` - What kind of link should AutoTorrent make? the options are
    hard and soft.
 -  ``scan_mode`` - options are unsplitable, normal and exact. These can be used
-   in combination. See the `scan_modes <#scan-modes>`_. for more information.
+   in combination. See the `scan_modes <#scan-modes>`_ section for more information.
 
 the ``add_limit_*`` variables allow for downloading of e.g. different
 NFOs and other small files that makes a difference in the torrents.
