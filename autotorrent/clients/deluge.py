@@ -14,13 +14,15 @@ from ..humanize import humanize_bytes
 
 logger = logging.getLogger(__name__)
 
+
 class UnableToLoginException(Exception):
     pass
+
 
 class DelugeClient(BaseClient):
     identifier = 'deluge'
 
-    def __init__(self, host, username, password):
+    def __init__(self, host, username, password, label=None):
         """
         Initializes a new Deluge client.
 
@@ -32,6 +34,7 @@ class DelugeClient(BaseClient):
         self.port = int(port)
         self.username = username
         self.password = password
+        self.label = label
         self.rpcclient = DelugeRPCClient(self.host, self.port, self.username, self.password, decode_utf8=True)
 
     def _login(self):
@@ -111,7 +114,7 @@ class DelugeClient(BaseClient):
         logger.info('Getting a list of torrent hashes')
         self._login()
         result = self.rpcclient.call('core.get_torrents_status', {}, ['name'])
-        return set(x.lower().decode('ascii') for x in result.keys())
+        return set(x.lower() for x in result.keys())
 
     def add_torrent(self, torrent, destination_path, files, fast_resume=True):
         """
@@ -129,6 +132,10 @@ class DelugeClient(BaseClient):
         infohash = hashlib.sha1(bencode(torrent[b'info'])).hexdigest()
         encoded_torrent = base64.b64encode(bencode(torrent))
 
+        if b'files' not in torrent[b'info'] and not destination_path.endswith(os.sep):
+            logger.debug('Singlefile torrent, adding sep to avoid weird naming in Deluge')
+            destination_path += os.sep
+
         basename = os.path.basename(destination_path)
         mapped_files = {}
         for i, f in enumerate(files):
@@ -140,4 +147,9 @@ class DelugeClient(BaseClient):
                                                                 'mapped_files': mapped_files,
                                                                 'seed_mode': fast_resume})
 
-        return result and result.decode('utf-8') == infohash
+        if self.label:
+            if self.label not in self.rpcclient.call('label.get_labels'):
+                self.rpcclient.call('label.add', self.label)
+            self.rpcclient.call('label.set_torrent', infohash, self.label)
+
+        return result and result == infohash
