@@ -12,15 +12,15 @@ Requirements
 ------------
 
 - Linux, BSD, OSX - Something not windows
-- rTorrent, Deluge and Transmission
-- Python 2.6, 2.7, 3.3, 3.4
+- rTorrent, Deluge, QBittorrent and Transmission
+- Python 2.7, 3.4, 3.5, 3.6
 - Shell / SSH / Putty
 
 Status
 ------
 
 Master branch
-~~~~~~~~~~~~~~    
+~~~~~~~~~~~~~~
 .. image:: https://coveralls.io/repos/github/JohnDoee/autotorrent/badge.svg?branch=master
    :target: https://coveralls.io/github/JohnDoee/autotorrent?branch=master
 .. image:: https://travis-ci.org/JohnDoee/autotorrent.svg?branch=master
@@ -30,7 +30,7 @@ Master branch
 Develop branch
 ~~~~~~~~~~~~~~
 .. image:: https://coveralls.io/repos/github/JohnDoee/autotorrent/badge.svg?branch=develop
-   :target: https://coveralls.io/github/JohnDoee/autotorrent?branch=develop 
+   :target: https://coveralls.io/github/JohnDoee/autotorrent?branch=develop
 .. image:: https://travis-ci.org/JohnDoee/autotorrent.svg?branch=develop
    :target: https://travis-ci.org/JohnDoee/autotorrent
 
@@ -192,7 +192,7 @@ Start by installing and configuring.
 Step 1
 ~~~~~~~~~~~~~~~
 Build the database with
-:: 
+::
     autotorrent-env/bin/autotorrent -r
 this may take some time.
 
@@ -256,8 +256,8 @@ See: http://www.cyberciti.biz/tips/understanding-unixlinux-symbolic-soft-and-har
 
 **Q: Can I have multiple clients configured simultaneously?**
 
-Yes, this can be done by prefixing a name of your choosing, with ``client-``. For example, you can name the section ``client-goodclient`` instead of just ``client``. Then specify the new client/name without the prefix using the commandline argument 
-:: 
+Yes, this can be done by prefixing a name of your choosing, with ``client-``. For example, you can name the section ``client-goodclient`` instead of just ``client``. Then specify the new client/name without the prefix using the commandline argument
+::
     autotorrent -l goodclient
 
 License
