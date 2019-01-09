@@ -1,11 +1,13 @@
-Version Unreleased ()
+Version 1.7.0 (09-01-2019)
 ===========================================================
 
+*   Feature: Added QBittorrent support
 *   Feature: Added guide to create a good workflow
 *   Feature: Added Deluge label support
 *   Bugfix: Small problem with Deluge single-file seeding
     and name in Deluge
 *   Bugfix: Divide by zero bug with buggy .torrent file fixed
+*   Other: Documentation improved and cleaned up (thanks d2dyno)
 
 Version 1.6.4 (30-08-2018)
 ===========================================================
@@ -18,6 +20,7 @@ Version 1.6.3 (21-01-2018)
 *   Bugfix: Transmission single-file problems
 *   Bugfix: Improved documentation
 *   Feature: Allow arbitrary keys in disks config section
+    (thanks kannibalox)
 
 Version 1.6.2 (11-10-2016)
 ===========================================================
