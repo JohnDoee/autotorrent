@@ -27,7 +27,7 @@ class QBittorrentClient(BaseClient):
         """
         Initializes a new qBittorrent client.
 
-        url - The url where transmission rpc can be reached.
+        url - The url where qbittorrent rpc can be reached.
         """
         self.url = url
         self.username = username
@@ -91,7 +91,7 @@ class QBittorrentClient(BaseClient):
         files is a list of files found in the torrent.
         """
         name = torrent[b'info'][b'name'].decode('utf-8')
-        logger.info('Trying to add a new torrent to transmission: %r' % name)
+        logger.info('Trying to add a new torrent to qbittorrent: %r' % name)
 
         destination_path = os.path.abspath(destination_path)
 
@@ -112,7 +112,6 @@ class QBittorrentClient(BaseClient):
             'savepath': destination_path,
             'category': self.category,
             'skip_checking': (fast_resume and 'true' or 'false'),
-            'paused': 'false',
         })
 
         return True
