@@ -20,7 +20,7 @@ Status
 ------
 
 Master branch
-~~~~~~~~~~~~~~    
+~~~~~~~~~~~~~~
 .. image:: https://coveralls.io/repos/github/JohnDoee/autotorrent/badge.svg?branch=master
    :target: https://coveralls.io/github/JohnDoee/autotorrent?branch=master
 .. image:: https://travis-ci.org/JohnDoee/autotorrent.svg?branch=master
@@ -30,7 +30,7 @@ Master branch
 Develop branch
 ~~~~~~~~~~~~~~
 .. image:: https://coveralls.io/repos/github/JohnDoee/autotorrent/badge.svg?branch=develop
-   :target: https://coveralls.io/github/JohnDoee/autotorrent?branch=develop 
+   :target: https://coveralls.io/github/JohnDoee/autotorrent?branch=develop
 .. image:: https://travis-ci.org/JohnDoee/autotorrent.svg?branch=develop
    :target: https://travis-ci.org/JohnDoee/autotorrent
 
@@ -205,7 +205,7 @@ Start by installing and configuring.
 Step 1
 ~~~~~~~~~~~~~~~
 Build the database with
-:: 
+::
     autotorrent-env/bin/autotorrent -r
 this may take some time.
 
@@ -273,6 +273,7 @@ Q: Can I have multiple clients configured simultaneously?
 ~~~~~~~~~~~~~~~
 Yes, this can be done by prefixing a name of your choosing, with ``client-``. For example, you can name the section ``client-goodclient`` instead of just ``client``. Then specify the new client/name without the prefix using the commandline argument 
 :: 
+=======
     autotorrent -l goodclient
 
 License
