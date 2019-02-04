@@ -273,7 +273,6 @@ Q: Can I have multiple clients configured simultaneously?
 ~~~~~~~~~~~~~~~
 Yes, this can be done by prefixing a name of your choosing, with ``client-``. For example, you can name the section ``client-goodclient`` instead of just ``client``. Then specify the new client/name without the prefix using the commandline argument 
 :: 
-=======
     autotorrent -l goodclient
 
 License
