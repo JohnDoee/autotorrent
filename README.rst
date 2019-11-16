@@ -118,7 +118,7 @@ deluge settings
 
 transmission settings
 *********************
-- ``url`` - an url where transmission can be reached, e.g. ``http://username:password@127.0.0.1:9091``
+- ``url`` - an url where transmission can be reached, e.g. ``http://username:password@127.0.0.1:9091/transmission/rpc``
 
 qbittorrent settings
 *********************
