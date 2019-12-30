@@ -50,10 +50,10 @@ def commandline_handler():
     parser.add_argument("--create_config", dest="create_config_file", nargs='?', const='autotorrent.conf', default=None, help="Creates a new configuration file")
     
     parser.add_argument("-t", "--test_connection", action="store_true", dest="test_connection", default=False, help='Tests the connection to the torrent client')
-    parser.add_argument("--dry-run", nargs='?', const='txt', default=None, dest="dry_run", choices=['txt', 'json'], help="Don't do any actual adding, just scan for files needed for torrents.")
-    parser.add_argument("-r", "--rebuild", dest="rebuild", default=False, help='Rebuild the database', nargs='*')
+    parser.add_argument("--dry-run", nargs='?', const='txt', default=None, dest="dry_run", choices=['txt', 'json'], help="Don't add any torrents to client, just scan for files needed for torrents.")
+    parser.add_argument("-r", "--rebuild", dest="rebuild", default=False, help='Rebuilds the database (necessary for new files/file changes on disk).', nargs='*')
     parser.add_argument("-a", "--addfile", dest="addfile", default=False, help='Add a new torrent file to client', nargs='+')
-    parser.add_argument("-d", "--delete_torrents", action="store_true", dest="delete_torrents", default=False, help='Delete torrents when they are added to the client')
+    parser.add_argument("-d", "--delete_torrents", action="store_true", dest="delete_torrents", default=False, help='Delete .torrent files when they are added to the client succesfully.')
     parser.add_argument("--verbose", help="increase output verbosity", action="store_true", dest="verbose")
     
     args = parser.parse_args()

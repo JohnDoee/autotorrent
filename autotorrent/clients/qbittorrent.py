@@ -38,7 +38,7 @@ class QBittorrentClient(BaseClient):
 
     def _login_check(self):
         if not self._logged_in:
-            r = self._session.post(urljoin(self.url, 'login'),
+            r = self._session.post(urljoin(self.url, 'api/v2/auth/login'),
                                    headers={'Referer': self.url},
                                    data={'username': self.username, 'password': self.password})
             if r.status_code != 200:

@@ -12,15 +12,15 @@ Requirements
 ------------
 
 - Linux, BSD, OSX - Something not windows
-- rTorrent, Deluge and Transmission
-- Python 2.6, 2.7, 3.3, 3.4
+- rTorrent, Deluge, qBittorrent or Transmission
+- Python 2.6+, 3.3+
 - Shell / SSH / Putty
 
 Status
 ------
 
 Master branch
-~~~~~~~~~~~~~~    
+~~~~~~~~~~~~~~
 .. image:: https://coveralls.io/repos/github/JohnDoee/autotorrent/badge.svg?branch=master
    :target: https://coveralls.io/github/JohnDoee/autotorrent?branch=master
 .. image:: https://travis-ci.org/JohnDoee/autotorrent.svg?branch=master
@@ -30,7 +30,7 @@ Master branch
 Develop branch
 ~~~~~~~~~~~~~~
 .. image:: https://coveralls.io/repos/github/JohnDoee/autotorrent/badge.svg?branch=develop
-   :target: https://coveralls.io/github/JohnDoee/autotorrent?branch=develop 
+   :target: https://coveralls.io/github/JohnDoee/autotorrent?branch=develop
 .. image:: https://travis-ci.org/JohnDoee/autotorrent.svg?branch=develop
    :target: https://travis-ci.org/JohnDoee/autotorrent
 
@@ -67,10 +67,23 @@ Upgrading from Github (develop)
 
     autotorrent-env/bin/pip install git+https://github.com/JohnDoee/autotorrent.git#develop --upgrade --force-reinstall
 
+Flags
+-------------
+- ``-a FILE, --addfile FILE`` - Add a new torrent file to the client. Wildcards can be used to expand to all files in a folder (eg: ``-a /some/folder/*.torrent``)
+- ``-c  CONFIG_FILE, --config CONFIG_FILE`` - Path to config file. Defaults to current terminal folder.
+- ``--create_config`` - Creates a new configuration file.
+- ``-d, --delete_torrents`` - Delete .torrent files when they are added to the client succesfully.
+- ``--dry-run`` - Don't add any torrents to client, just scan for files needed for torrents.
+- ``-h, --help`` - Shows help message and exits.
+- ``-l CLIENT, --client CLIENT`` - Name of client to use (when multiple configured). `Read more here <#q-can-i-have-multiple-clients-configured-simultaneously>`_.
+- ``-r, --rebuild`` - Rebuilds the database (necessary for new files/file changes on disk).
+- ``-t, --test-connection`` - Test the connection to the torrent client.
+- ``--verbose`` - Increase output verbosity.
+
 Configuration
 -------------
 
-All settings can be found and changed in autotorrent.conf, this file
+All settings can be found and changed in ``autotorrent.conf``, this file
 must reside in the same folder as autotorrent is executed from.
 
 general
@@ -87,7 +100,7 @@ general
 -  ``link_type`` - What kind of link should AutoTorrent make? the options are
    hard and soft.
 -  ``scan_mode`` - options are unsplitable, normal and exact. These can be used
-   in combination. See the scan_mode section for more information.
+   in combination. See the `scan_modes <#scan-modes>`_ section for more information.
 
 the ``add_limit_*`` variables allow for downloading of e.g. different
 NFOs and other small files that makes a difference in the torrents.
@@ -111,14 +124,14 @@ To use unix socket for scgi, make an url with no `ip:port` and instead a path, e
 
 deluge settings
 ***************
-- ``host`` - an ip:port pair, e.g. `127.0.0.1:12345`
+- ``host`` - an ip:port pair, e.g. ``127.0.0.1:12345``
 - ``username`` - deluge rpc username
 - ``password`` - deluge rpc password
 - ``label`` - label the torrent, remember to enable the label plugin
 
 transmission settings
 *********************
-- ``url`` - an url where transmission can be reached, e.g. ``http://username:password@127.0.0.1:9091``
+- ``url`` - an url where transmission can be reached, e.g. ``http://username:password@127.0.0.1:9091/transmission/rpc``
 
 qbittorrent settings
 *********************
@@ -192,7 +205,7 @@ Start by installing and configuring.
 Step 1
 ~~~~~~~~~~~~~~~
 Build the database with
-:: 
+::
     autotorrent-env/bin/autotorrent -r
 this may take some time.
 
@@ -208,14 +221,14 @@ And you're good to go.
 FAQ
 ---
 
-**Q: How are files with relative path in the configuration file, found?**
-
+Q: How are files with relative path in the configuration file, found?
+~~~~~~~~~~~~~~~
 The paths should be relative to the configuration file, e.g. ``/home/user/autotorrent-env/autotorrent.conf``,
 then ``store_path=store_paths/X/`` resolves to ``/home/user/autotorrent-env/store_path/``.
 
 
-**Q: I have three sites I cross-seed between, how do you suggest I structure it?**
-
+Q: I have three sites I cross-seed between, how do you suggest I structure it?
+~~~~~~~~~~~~~~~
 Say, you have site X, Y and Z. You want to seed across the sites as they share lots of content.
 You download all your data into /home/user/downloads/. For this you will need three configuration file, one for each site.
 
@@ -234,28 +247,30 @@ disks paths can be:
 - ``disk3=/home/user/autotorrent-env/store_paths/Y/``
 - ``disk4=/home/user/autotorrent-env/store_paths/Z/``
 
-**Q: Can I use the same Database file for several configuration files?**
-
+Q: Can I use the same Database file for several configuration files?
+~~~~~~~~~~~~~~~
 Yes, if they have the same disks. Don't worry about adding the `store_path` to the disks, AutoTorrent will figure it out.
 
-**Q: What problems can occur?**
-
+Q: What problems can occur?
+~~~~~~~~~~~~~~~
 One big problem is that the files are not checked for their actual content, just if their filename matches and size matches.
 If AutoTorrent tries to use a file that is not complete, then you can end up sending loads of garbage to innocent peers,
 alhough they should blackball you quite fast.
 
-**Q: I want to cross-seed RARed scene releases, what do you think about that?**
-
+Q: I want to cross-seed RARed scene releases, what do you think about that?
+~~~~~~~~~~~~~~~
 The actual .rar files must be completely downloaded and the same size. Things that can vary are: nfos, sfvs, samples and subs.
 
 The releases must also have an sfv in the same folder as the rar files files.
 
-**Q: What are hardlinks and what are the risks or problems associated with using them?**
-
+Q: What are hardlinks and what are the risks or problems associated with using them?
+~~~~~~~~~~~~~~~
 See: http://www.cyberciti.biz/tips/understanding-unixlinux-symbolic-soft-and-hard-links.html
 
-**Q: Can I have multiple clients configured simultaneously?**
+.. _clients:
 
+Q: Can I have multiple clients configured simultaneously?
+~~~~~~~~~~~~~~~
 Yes, this can be done by prefixing a name of your choosing, with ``client-``. For example, you can name the section ``client-goodclient`` instead of just ``client``. Then specify the new client/name without the prefix using the commandline argument 
 :: 
     autotorrent -l goodclient
@@ -263,4 +278,4 @@ Yes, this can be done by prefixing a name of your choosing, with ``client-``. Fo
 License
 -------
 
-MIT, see LICENSE
+MIT, see `LICENSE <../master/LICENSE>`_
