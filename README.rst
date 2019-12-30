@@ -141,7 +141,7 @@ qbittorrent settings
 - ``category`` - category applied to torrents added by AutoTorrent (similar to label)
 
 `disks`
-~~~~~
+~~~~~~~~~~
 
 A list of disks where to build the search database from.
 
@@ -155,27 +155,27 @@ The modes are named normal, exact and unsplitable. They can be combined by addin
 between them, e.g. ``scan_mode=normal,exact,unsplitable``
 
 Mode: ``normal``
-~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 It takes the filename and size and tries to find files with same name and size.
 
 This mode cannot handle duplicate filename/size pairs.
 
 Mode: ``exact``
-~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 
 The perfect way to move torrent client as it tries to set the download path to the old path.
 
 This mode does not allow for missing files and is intended to re-add non-renamed back to a torrent client.
 
 Mode: ``unsplitable``
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This mode takes scene releases and extracted dvd/bluray isos into consideration and relies on the folder it thinks
 is the main / head folder. Perfect for cross-seeding scene releases.
 
 Mode: ``hash_name``
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This mode tries to hashcheck files with the exact name as wanted, but the size might be different (up to 10% different).
 If pieces match, then it is resized to fit original size and written to the destination directory.
@@ -183,12 +183,12 @@ If pieces match, then it is resized to fit original size and written to the dest
 Make sure there is enough space in the target directory.
 
 Mode: ``hash_size``
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This mode tries to hashcheck files with the exact size as wanted, but the name might be different.|
 
 Mode: ``hash_slow``
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This mode tries to hashcheck files with a size within 10% of the original.
 If pieces match, then it is resized to fit original size and written to the destination directory.
@@ -205,15 +205,21 @@ Start by installing and configuring.
 Step 1
 ~~~~~~~~~~~~~~~
 Build the database with
+
 ::
+
     autotorrent-env/bin/autotorrent -r
+
 this may take some time.
 
 Step 2
 ~~~~~~~~~~~~~~~
 Have some .torrent files ready and run
+
 ::
+
     autotorrent-env/bin/autotorrent -a path/to/torrents/*.torrent
+
 this command will spit out how it went with adding the torrents.
 
 And you're good to go.
@@ -222,13 +228,13 @@ FAQ
 ---
 
 Q: How are files with relative path in the configuration file, found?
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The paths should be relative to the configuration file, e.g. ``/home/user/autotorrent-env/autotorrent.conf``,
 then ``store_path=store_paths/X/`` resolves to ``/home/user/autotorrent-env/store_path/``.
 
 
 Q: I have three sites I cross-seed between, how do you suggest I structure it?
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Say, you have site X, Y and Z. You want to seed across the sites as they share lots of content.
 You download all your data into /home/user/downloads/. For this you will need three configuration file, one for each site.
 
@@ -248,31 +254,32 @@ disks paths can be:
 - ``disk4=/home/user/autotorrent-env/store_paths/Z/``
 
 Q: Can I use the same Database file for several configuration files?
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Yes, if they have the same disks. Don't worry about adding the `store_path` to the disks, AutoTorrent will figure it out.
 
 Q: What problems can occur?
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 One big problem is that the files are not checked for their actual content, just if their filename matches and size matches.
 If AutoTorrent tries to use a file that is not complete, then you can end up sending loads of garbage to innocent peers,
 alhough they should blackball you quite fast.
 
 Q: I want to cross-seed RARed scene releases, what do you think about that?
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The actual .rar files must be completely downloaded and the same size. Things that can vary are: nfos, sfvs, samples and subs.
 
 The releases must also have an sfv in the same folder as the rar files files.
 
 Q: What are hardlinks and what are the risks or problems associated with using them?
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 See: http://www.cyberciti.biz/tips/understanding-unixlinux-symbolic-soft-and-hard-links.html
 
 .. _clients:
 
 Q: Can I have multiple clients configured simultaneously?
-~~~~~~~~~~~~~~~
-Yes, this can be done by prefixing a name of your choosing, with ``client-``. For example, you can name the section ``client-goodclient`` instead of just ``client``. Then specify the new client/name without the prefix using the commandline argument 
-:: 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Yes, this can be done by prefixing a name of your choosing, with ``client-``. For example, you can name the section ``client-goodclient`` instead of just ``client``. Then specify the new client/name without the prefix using the commandline argument
+
+::
     autotorrent -l goodclient
 
 License
