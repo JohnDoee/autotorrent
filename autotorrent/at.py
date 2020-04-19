@@ -3,6 +3,7 @@ from __future__ import division, unicode_literals
 import os
 import hashlib
 import logging
+import platform
 
 from collections import defaultdict
 
@@ -349,8 +350,88 @@ class AutoTorrent(object):
                     os.symlink(f['actual_path'], destination)
                 elif self.link_type == 'hard':
                     os.link(f['actual_path'], destination)
+                elif self.link_type == 'ref':
+                    self.reflink(f['actual_path'], destination)
                 else:
                     raise UnknownLinkTypeException('%r is not a known link type' % self.link_type)
+
+    def reflink(self, path, destination):
+        """
+        Perform a reflink (if supported, currently only xfs, apfs, btrfs is)
+        This code is modified from dvc (https://github.com/iterative/dvc/blob/f4bec650eddc8874b3f7ab2f8b34bc5dfe60fd49/dvc/system.py#L105).
+        These libraries are available under the Apache 2.0 license, which can be obtained from http://www.apache.org/licenses/LICENSE-2.0.
+        """
+        system = platform.system()
+        logger.debug('platform is %r', system)
+        try:
+           if system == "Windows":
+               ret = self.reflink_windows(path, destination)
+           elif system == "Darwin":
+               ret = self.reflink_darwin(path, destination)
+           elif system == "Linux":
+               ret = self.reflink_linux(path, destination)
+           else:
+               ret = -1
+        except IOError:
+               ret = -1
+        
+        if ret != 0:
+               raise Exception("reflink is not supported")
+
+
+    def reflink_linux(self, path, destination):
+        """
+        Linux only reflink via syscall FICLONE on supported filesystems
+        """
+        import os
+        import fcntl
+
+        FICLONE = 0x40049409
+
+        try:
+            ret = 255
+            with open(path, "r") as s, open(destination, "w+") as d:
+                ret = fcntl.ioctl(d.fileno(), FICLONE, s.fileno())
+        finally:
+            if ret != 0:
+                os.unlink(destination)
+
+        return ret
+
+    def reflink_windows(self, path, destination):
+        return -1
+
+    def reflink_darwin(self, path, destination):
+        import ctypes
+
+        LIBC = "libc.dylib"
+        LIBC_FALLBACK = "/usr/lib/libSystem.dylib"
+        try:
+            clib = ctypes.CDLL(LIBC)
+        except OSError as exc:
+            logger.debug(
+                "unable to access '{}' (errno '{}'). "
+                "Falling back to '{}'.".format(LIBC, exc.errno, LIBC_FALLBACK)
+            )
+            if exc.errno != errno.ENOENT:
+                raise
+            # NOTE: trying to bypass System Integrity Protection (SIP)
+            clib = ctypes.CDLL(LIBC_FALLBACK)
+
+        if not hasattr(clib, "clonefile"):
+            return -1
+
+        clonefile = clib.clonefile
+        clonefile.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int]
+        clonefile.restype = ctypes.c_int
+
+        return clonefile(
+            ctypes.c_char_p(path.encode("utf-8")),
+            ctypes.c_char_p(destination.encode("utf-8")),
+            ctypes.c_int(0),
+        )
+
+
 
     def rewrite_hashed_files(self, destination_path, files):
         """
