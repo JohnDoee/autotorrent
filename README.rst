@@ -98,7 +98,7 @@ general
 -  ``add_limit_percent`` - Max percent the total torrent size is allowed
    to vary
 -  ``link_type`` - What kind of link should AutoTorrent make? the options are
-   hard and soft.
+   hard, soft and reflink (if supported).
 -  ``scan_mode`` - options are unsplitable, normal and exact. These can be used
    in combination. See the `scan_modes <#scan-modes>`_ section for more information.
 
