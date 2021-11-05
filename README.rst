@@ -91,6 +91,8 @@ general
 
 -  ``db`` - Path to the database file
 -  ``store_path`` - Folder where the virtual folders seeded, resides
+-  ``client_path`` - Folder where the virtual folders seeded, resides 
+   inside the torrent client. Defaults to `store_path`
 -  ``ignore_files`` - A comma seperated list of files that should be
    ignored (supports wildcards)
 -  ``add_limit_size`` - Max size, in bytes, the total torrent size is
