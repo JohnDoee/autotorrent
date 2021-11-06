@@ -549,7 +549,7 @@ class AutoTorrent(object):
             logger.info('Removing torrent %r' % path)
             os.remove(path)
 
-        if self.client.add_torrent(torrent, client_path, files['files'], fast_resume):
+        if self.client.add_torrent(torrent, client_path, destination_path, files['files'], fast_resume):
             self.print_status(Status.OK, path, 'Torrent added successfully')
             return Status.OK
         else:

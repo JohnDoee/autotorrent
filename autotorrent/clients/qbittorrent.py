@@ -79,7 +79,7 @@ class QBittorrentClient(BaseClient):
         self._login_check()
         return set(torrent['hash'].lower() for torrent in self._session.get(urljoin(self.url, 'api/v2/torrents/info')).json())
 
-    def add_torrent(self, torrent, destination_path, files, fast_resume=True):
+    def add_torrent(self, torrent, destination_path, file_path, files, fast_resume=True):
         """
         Add a new torrent to qBittorrent.
 

@@ -124,7 +124,7 @@ class RTorrentClient(BaseClient):
     def _get_mtime(self, path):
         return int(os.stat(path).st_mtime)
 
-    def add_torrent(self, torrent, destination_path, files, fast_resume=True):
+    def add_torrent(self, torrent, destination_path, file_path, files, fast_resume=True):
         """
         Add a new torrent to rtorrent.
 
@@ -151,7 +151,7 @@ class RTorrentClient(BaseClient):
 
                 result = {b'priority': 1, b'completed': int(f['completed'])}
                 if f['completed']:
-                    result[b'mtime'] = self._get_mtime(os.path.join(destination_path, *f['path']))
+                    result[b'mtime'] = self._get_mtime(os.path.join(file_path, *f['path']))
                 torrent[b'libtorrent_resume'][b'files'].append(result)
 
                 last_position = current_position + f['length']
@@ -172,7 +172,7 @@ class RTorrentClient(BaseClient):
                 logger.info('This torrent is incomplete, setting bitfield')
                 torrent[b'libtorrent_resume'][b'bitfield'] = bitfield_to_string(bitfield)
 
-        torrent_file = os.path.join(destination_path, '__tmp_torrent%s.torrent' % uuid.uuid4())
+        torrent_file = os.path.join(file_path, '__tmp_torrent%s.torrent' % uuid.uuid4())
         with open(torrent_file, 'wb') as f:
             f.write(bencode(torrent))
 
