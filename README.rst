@@ -1,6 +1,8 @@
 AutoTorrent
 ===========
 
+**NOT UPDATED ANYMORE**: Check out the successor Autotorrent2 https://github.com/JohnDoee/autotorrent2
+
 Given an input torrent, it will scan your collection for the files in
 the torrent. If all (or most) the files are found, a folder with links to all the
 files will be created and the torrent added to the torrent client.
