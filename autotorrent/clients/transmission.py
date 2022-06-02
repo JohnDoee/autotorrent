@@ -117,7 +117,7 @@ class TransmissionClient(BaseClient):
         result = self.call('torrent-get', fields=['hashString'])
         return set(x['hashString'].lower() for x in result['torrents'])
 
-    def add_torrent(self, torrent, destination_path, files, fast_resume=True):
+    def add_torrent(self, torrent, destination_path, file_path, files, fast_resume=True):
         """
         Add a new torrent to Transmission.
 

@@ -30,7 +30,7 @@ class BaseClient(object):
         """
         raise NotImplementedError
 
-    def add_torrent(self, torrent, destination_path, files, fast_resume=True):
+    def add_torrent(self, torrent, destination_path, file_path, files, fast_resume=True):
         """
         Adds a torrent to the torrent client.
         """

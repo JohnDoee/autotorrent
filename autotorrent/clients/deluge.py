@@ -116,7 +116,7 @@ class DelugeClient(BaseClient):
         result = self.rpcclient.call('core.get_torrents_status', {}, ['name'])
         return set(x.lower() for x in result.keys())
 
-    def add_torrent(self, torrent, destination_path, files, fast_resume=True):
+    def add_torrent(self, torrent, destination_path, file_path, files, fast_resume=True):
         """
         Add a new torrent to Deluge.
 

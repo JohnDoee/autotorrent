@@ -54,10 +54,11 @@ class IllegalPathException(Exception):
     pass
 
 class AutoTorrent(object):
-    def __init__(self, db, client, store_path, add_limit_size, add_limit_percent, delete_torrents, link_type='soft'):
+    def __init__(self, db, client, store_path, client_path, add_limit_size, add_limit_percent, delete_torrents, link_type='soft'):
         self.db = db
         self.client = client
         self.store_path = store_path
+        self.client_path = client_path
         self.add_limit_size = add_limit_size
         self.add_limit_percent = add_limit_percent
         self.delete_torrents = delete_torrents
@@ -525,6 +526,7 @@ class AutoTorrent(object):
         if files['mode'] == 'link' or files['mode'] == 'hash':
             logger.info('Preparing torrent using link mode')
             destination_path = os.path.join(self.store_path, os.path.splitext(os.path.basename(path))[0])
+            client_path = os.path.join(self.client_path, os.path.splitext(os.path.basename(path))[0])
 
             if os.path.isdir(destination_path):
                 logger.info('Folder exist but torrent is not seeded %s' % destination_path)
@@ -535,6 +537,7 @@ class AutoTorrent(object):
         elif files['mode'] == 'exact':
             logger.info('Preparing torrent using exact mode')
             destination_path = files['source_path']
+            client_path = files['source_path']
 
         fast_resume = True
         if files['mode'] == 'hash':
@@ -546,7 +549,7 @@ class AutoTorrent(object):
             logger.info('Removing torrent %r' % path)
             os.remove(path)
 
-        if self.client.add_torrent(torrent, destination_path, files['files'], fast_resume):
+        if self.client.add_torrent(torrent, client_path, destination_path, files['files'], fast_resume):
             self.print_status(Status.OK, path, 'Torrent added successfully')
             return Status.OK
         else:

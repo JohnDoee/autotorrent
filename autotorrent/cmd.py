@@ -170,11 +170,13 @@ def commandline_handler():
     client_options = dict(config.items(client_option))
     client_options.pop('client')
     client = TORRENT_CLIENTS[client_name](**client_options)
+    store_path = config.get('general', 'store_path')
     
     at = AutoTorrent(
         db,
         client,
-        config.get('general', 'store_path'),
+        store_path,
+        (config.get('general', 'client_path') if config.has_option('general', 'client_path') else store_path),
         config.getint('general', 'add_limit_size'),
         config.getfloat('general', 'add_limit_percent'),
         args.delete_torrents,
